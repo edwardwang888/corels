@@ -144,55 +144,92 @@ void print_final_rulelist(const tracking_vector<unsigned short, DataStruct::Tree
                           int print_progress, bool print_debug,
                           int nsamples, int nrules) {
     assert(rulelist.size() == preds.size() - 1);
-
-    // Generate ruleset
-    /*
-    ruleset_t *ruleset;
-    rule_t rules_copy[nrules];
-    int idarray[rulelist.size()];
-    for (size_t i = 0; i < rulelist.size(); i++)
-        idarray[i] = rulelist[i];
-    for (int i = 0; i < nrules; i++)
-        rules_copy[i] = rules[i];
-    ruleset_init(rulelist.size(), nsamples, idarray, rules_copy, &ruleset);
-    */
     
     // Print entire rules array
-    printf("\nALL RULE LIST\n");
-    for (size_t i = 0; i < rulelist.size(); i++) {
-        printf("%d ", rulelist[i]);
-    }
-    printf("\n");
-    for (int i = 0; i < nrules; i++) {
-        printf("if (%s) ", rules[i].features);
-        printf("%d %d\n", rules[i].support, rules[i].cardinality);
-        //printf("    %d %d\n", rules[rulelist[i]].support, rules[rulelist[i]].cardinality);
-        //sum += rules[rulelist[i]].support;
+    if (print_debug) {
+        printf("\nALL RULE LIST\n");
+        /*
+        for (size_t i = 0; i < rulelist.size(); i++) {
+            //printf("%d %d", rulelist[i], preds[i]);
+            rule_t label = labels[preds[i]];
+            printf("%s %d %d\n", label.features, label.support, label.cardinality);
+        }
+        */
+        for (int i = 0; i < 2; i++)
+            printf("%s %d %d\n", labels[i].features, labels[i].support, labels[i].cardinality);
+        //printf("\n");
+        for (int i = 0; i < nrules; i++) {
+            printf("if (%s) ", rules[i].features);
+            printf("%d %d\n", rules[i].support, rules[i].cardinality);
+        }
     }
     
     printf("\nOPTIMAL RULE LIST\n");
     if (rulelist.size() > 0) {
-        int sum = 0;
+        VECTOR captured, total_captured;
+        rule_vinit(nsamples, &captured);
+        rule_vinit(nsamples, &total_captured);
+        rule_t curr_rule = rules[rulelist[0]]; // Make a copy to remove const qualifier
+        rule_copy(captured, curr_rule.truthtable, nsamples);
+        rule_copy(total_captured, captured, nsamples);
+        int ncaptured = rules[rulelist[0]].support; // Only for first rule
+        int support_sum = 0, captured_sum = 0;
+        if (print_debug) {
+            printf("***********\n");
+            printf("FORMAT:\nif ({rule}) then ({label})\n");
+            printf("    [support cardinality ncaptured proportion]\n");
+            printf("***********\n");
+        }
         printf("if (%s) then (%s)\n", rules[rulelist[0]].features,
                labels[preds[0]].features);
-        printf("    %d %d\n", rules[rulelist[0]].support, rules[rulelist[0]].cardinality);
-        sum += rules[rulelist[0]].support;
+        // Count number of 1's
+        rule_t ones_label = labels[1];
+        int num_ones;
+        VECTOR ones;
+        rule_vinit(nsamples, &ones);
+        rule_vand(ones, captured, ones_label.truthtable, nsamples, &num_ones);
+        double proportion = (double)num_ones/ncaptured;
+        if (print_debug) {
+            printf("    %d %d %d %f\n", rules[rulelist[0]].support, rules[rulelist[0]].cardinality, ncaptured, proportion);
+        }
+        support_sum += rules[rulelist[0]].support;
+        captured_sum += ncaptured;
         for (size_t i = 1; i < rulelist.size(); ++i) {
+            int total_ncaptured;
+            curr_rule = rules[rulelist[i]];
+            rule_vandnot(captured, curr_rule.truthtable, total_captured, nsamples, &ncaptured);
+            rule_vor(total_captured, curr_rule.truthtable, total_captured, nsamples, &total_ncaptured);
             printf("else if (%s) then (%s)\n", rules[rulelist[i]].features,
                    labels[preds[i]].features);
-            printf("    %d %d\n", rules[rulelist[i]].support, rules[rulelist[i]].cardinality);
-            sum += rules[rulelist[i]].support;
+            int support = rules[rulelist[i]].support;
+            // Count number of 1's
+            rule_vand(ones, captured, ones_label.truthtable, nsamples, &num_ones);
+            double proportion = (double)num_ones/ncaptured;
+            if (print_debug) {
+                printf("    %d %d %d %f\n", support, rules[rulelist[i]].cardinality, ncaptured, proportion);
+                /*
+                for (int i = 0; i < nsamples; i++)
+                    printf("%d", rule_isset(captured, i));
+                printf("\n");
+                */
+            }
+            assert(ncaptured <= support);
+            support_sum += rules[rulelist[i]].support;
+            captured_sum += ncaptured;
         }
         printf("else (%s)\n\n", labels[preds.back()].features);
-        printf("nsamples: %d\n\n", nsamples);
-        printf("sum: %d\n\n", sum);
-        printf("Support:\n");
-        for (int i = 0; i < nrules; i++)
-            printf("%d ", rules[i].support);
-        printf("\n\nCardinality:\n");
-        for (int i = 0; i < nrules; i++)
-            printf("%d ", rules[i].cardinality);
-        printf("\n\n");
+        if (print_debug) {
+            printf("nsamples: %d\n\n", nsamples);
+            printf("support_sum: %d\n\n", support_sum);
+            printf("captured_sum: %d\n\n", captured_sum);
+            printf("Support:\n");
+            for (int i = 0; i < nrules; i++)
+                printf("%d ", rules[i].support);
+            printf("\n\nCardinality:\n");
+            for (int i = 0; i < nrules; i++)
+                printf("%d ", rules[i].cardinality);
+            printf("\n\n");
+        }
         
         if (latex_out) {
             printf("\nLATEX form of OPTIMAL RULE LIST\n");
