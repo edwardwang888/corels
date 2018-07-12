@@ -132,7 +132,7 @@ void print_final_rulelist(const tracking_vector<unsigned short, DataStruct::Tree
                           char fname[],
                           int print_progress, int nsamples, int nrules)
 {
-    print_final_rulelist(rulelist, preds, latex_out, rules, labels, fname, true, nsamples, nrules);
+    print_final_rulelist(rulelist, preds, latex_out, rules, labels, fname, print_progress, true, nsamples, nrules);
 }
 
 void print_final_rulelist(const tracking_vector<unsigned short, DataStruct::Tree>& rulelist,
