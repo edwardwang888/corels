@@ -7,6 +7,10 @@
 Queue::Queue(std::function<bool(Node*, Node*)> cmp, char const *type)
     : q_(new q (cmp)), type_(type) {}
 
+bool has_falling_constraint(double proportion, double parent_proportion, double default_proportion) {
+    return (parent_proportion == 0 || parent_proportion > proportion) && proportion > default_proportion;
+}
+
 /*
  * Performs incremental computation on a node, evaluating the bounds and inserting into the cache,
  * queue, and permutation map if appropriate.
@@ -81,9 +85,9 @@ void evaluate_children(CacheTree* tree, Node* parent, tracking_vector<unsigned s
         logger->incObjNum();
         // Should falling constraint go here too?
         double proportion = (double)c1/num_captured;
+        double default_proportion = (double)d1/num_not_captured;
         if (objective < tree->min_objective() && \
-           (falling == false || ((parent->proportion() == 0 || parent->proportion() > proportion) && \
-                                 proportion > (double)d1/num_not_captured))) {
+           (falling == false || has_falling_constraint(proportion, parent->proportion(), default_proportion))) {
             if (verbosity.count("progress")) {
 				printf("min(objective): %1.5f -> %1.5f, length: %d, cache size: %zu\n",
                    tree->min_objective(), objective, len_prefix, tree->num_nodes());
@@ -108,8 +112,7 @@ void evaluate_children(CacheTree* tree, Node* parent, tracking_vector<unsigned s
         // only add node to our datastructures if its children will be viable
         // also add falling constraint
         if (lookahead_bound < tree->min_objective() && \
-            (falling == false || ((parent->proportion() == 0 || parent->proportion() > proportion) && \
-                                  proportion > (double)d1/num_not_captured))) {
+            (falling == false || has_falling_constraint(proportion, parent->proportion(), default_proportion))) {
             double t3 = timestamp();
             // check permutation bound
             if (show_proportion)
