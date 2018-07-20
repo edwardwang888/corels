@@ -30,21 +30,34 @@ int main(int argc, char *argv[])
         exit(1);
     }
     
+    int falling = 1;
+    int opt;
+    /* Specify -z for no falling */
+    while((opt = getopt(argc, argv, "z")) != -1) {
+        if (opt == 'z')
+            falling = 0;
+    }
+    
     double r = 0.15;
     unlink("default.csv");
-    unlink("falling.csv");
+    if (falling)
+        unlink("falling.csv");
     for (int i = 0; i < 70; i++) {
-        run(r, "default.csv", argv[1]);
-        run(r, "falling.csv", argv[1]);
+        run(r, "default.csv", argv[optind]);
+        if (falling)
+            run(r, "falling.csv", argv[optind]);
         r /= 1.25;
     }
     
     // Run with zero regularity
-    run(0, "default.csv", argv[1]);
-    run(0, "falling.csv", argv[1]);
+    run(0, "default.csv", argv[optind]);
+    if (falling)
+        run(0, "falling.csv", argv[optind]);
     
     system("cat default.csv | uniq > default1.csv");
     rename("default1.csv", "default.csv");
-    system("cat falling.csv | uniq > falling1.csv");
-    rename("falling1.csv", "falling.csv");
+    if (falling) {
+        system("cat falling.csv | uniq > falling1.csv");
+        rename("falling1.csv", "falling.csv");
+    }
 }
