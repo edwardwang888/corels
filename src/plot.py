@@ -14,8 +14,6 @@ plt.plot(falling[:]['Regularization'], falling[:]['Objective'], 'x-', label='Fal
 plt.plot(default[:]['Regularization'], default[:]['Objective'], '+-', label='Default')
 plt.xlabel('Regularization')
 plt.ylabel('Min Objective')
-plt.xlim(0, 0.01)
-plt.ylim(0.325, 0.365)
 plt.title("Regularization vs. Min Objective")
 plt.legend()
 
