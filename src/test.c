@@ -20,6 +20,7 @@ void run(double r, char *outfile, char *dataset)
         sprintf(temp, "../data/%1$s.out ../data/%1$s.label ../data/%1$s.minor", dataset);
     
     strcat(cmd, temp);
+    printf("\n%s\n", cmd);
     system(cmd);
 }
 
