@@ -428,6 +428,7 @@ void print_final_rulelist(const tracking_vector<unsigned short, DataStruct::Tree
                           const rule_t rules[],
                           const rule_t labels[],
                           char fname[],
-   			              int print_progress, int nsamples, int nrules);
+   			              int print_progress, int nsamples, int nrules, double *retaccuracy, double c,
+                             double *retobjective);
 
 void print_machine_info();

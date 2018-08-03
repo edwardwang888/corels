@@ -111,7 +111,8 @@ void print_final_rulelist(const tracking_vector<unsigned short, DataStruct::Tree
                           const rule_t labels[],
                           char fname[],
                           int print_progress, bool print_debug,
-                          int nsamples, int nrules);
+                          int nsamples = 0, int nrules = 0, double *retaccuracy = NULL, double c = 0,
+                          double *retobjective = NULL);
 
 void print_final_rulelist(const tracking_vector<unsigned short, DataStruct::Tree>& rulelist,
                           const tracking_vector<bool, DataStruct::Tree>& preds,
@@ -121,7 +122,7 @@ void print_final_rulelist(const tracking_vector<unsigned short, DataStruct::Tree
                           char fname[],
                           int print_progress)
 {
-    print_final_rulelist(rulelist, preds, latex_out, rules, labels, fname, print_progress, false, 0, 0);
+    print_final_rulelist(rulelist, preds, latex_out, rules, labels, fname, print_progress, false);
 }
 
 void print_final_rulelist(const tracking_vector<unsigned short, DataStruct::Tree>& rulelist,
@@ -130,9 +131,10 @@ void print_final_rulelist(const tracking_vector<unsigned short, DataStruct::Tree
                           const rule_t rules[],
                           const rule_t labels[],
                           char fname[],
-                          int print_progress, int nsamples, int nrules)
+                          int print_progress, int nsamples, int nrules, double *retaccuracy, double c,
+                          double *retobjective)
 {
-    print_final_rulelist(rulelist, preds, latex_out, rules, labels, fname, print_progress, true, nsamples, nrules);
+    print_final_rulelist(rulelist, preds, latex_out, rules, labels, fname, print_progress, true, nsamples, nrules, retaccuracy, c, retobjective);
 }
 
 void print_final_rulelist(const tracking_vector<unsigned short, DataStruct::Tree>& rulelist,
@@ -140,32 +142,37 @@ void print_final_rulelist(const tracking_vector<unsigned short, DataStruct::Tree
                           const bool latex_out,
                           const rule_t rules[],
                           const rule_t labels[],
+          
                           char fname[],
-                          int print_progress, bool print_debug,
-                          int nsamples, int nrules) {
+                          int print_progress, bool print_debug = false,
+                          int nsamples, int nrules, double *retaccuracy, double c, double *retobjective) {
     assert(rulelist.size() == preds.size() - 1);
     
     // Print entire rules array
-    if (print_debug) {
-        printf("\nALL RULE LIST\n");
-        /*
-        for (size_t i = 0; i < rulelist.size(); i++) {
-            //printf("%d %d", rulelist[i], preds[i]);
-            rule_t label = labels[preds[i]];
-            printf("%s %d %d\n", label.features, label.support, label.cardinality);
-        }
-        */
-        for (int i = 0; i < 2; i++)
-            printf("%s %d %d\n", labels[i].features, labels[i].support, labels[i].cardinality);
-        //printf("\n");
-        for (int i = 0; i < nrules; i++) {
-            printf("if (%s) ", rules[i].features);
-            printf("%d %d\n", rules[i].support, rules[i].cardinality);
-        }
-    }
+    // if (print_debug) {
+    //     printf("\nALL RULE LIST\n");
+    //     /*
+    //     for (size_t i = 0; i < rulelist.size(); i++) {
+    //         //printf("%d %d", rulelist[i], preds[i]);
+    //         rule_t label = labels[preds[i]];
+    //         printf("%s %d %d\n", label.features, label.support, label.cardinality);
+    //     }
+    //     */
+    //     for (int i = 0; i < 2; i++)
+    //         printf("%s %d %d\n", labels[i].features, labels[i].support, labels[i].cardinality);
+    //     //printf("\n");
+    //     for (int i = 0; i < nrules; i++) {
+    //         printf("if (%s) ", rules[i].features);
+    //         printf("%d %d\n", rules[i].support, rules[i].cardinality);
+    //     }
+    // }
     
+
     printf("\nOPTIMAL RULE LIST\n");
+    double objective = labels[0].support * labels[1].support;
+    //printf("initial obj: %f\n", objective);
     if (rulelist.size() > 0) {
+        double accuracy = 0;
         VECTOR captured, total_captured;
         rule_vinit(nsamples, &captured);
         rule_vinit(nsamples, &total_captured);
@@ -173,6 +180,7 @@ void print_final_rulelist(const tracking_vector<unsigned short, DataStruct::Tree
         rule_copy(captured, curr_rule.truthtable, nsamples);
         rule_copy(total_captured, captured, nsamples);
         int ncaptured = rules[rulelist[0]].support; // Only for first rule
+        int total_ncaptured = ncaptured;
         int support_sum = 0, captured_sum = 0;
         if (print_debug) {
             printf("***********\n");
@@ -182,20 +190,27 @@ void print_final_rulelist(const tracking_vector<unsigned short, DataStruct::Tree
         }
         printf("if (%s) then (%s)\n", rules[rulelist[0]].features,
                labels[preds[0]].features);
-        // Count number of 1's
+        // Make copy to remove const
         rule_t ones_label = labels[1];
-        int num_ones;
-        VECTOR ones;
+        rule_t zeros_label = labels[0];
+        // Count number of ones
+        int num_ones, d0;
+        VECTOR ones, default_zeros;
         rule_vinit(nsamples, &ones);
+        rule_vinit(nsamples, &default_zeros);
         rule_vand(ones, captured, ones_label.truthtable, nsamples, &num_ones);
+        rule_vandnot(default_zeros, zeros_label.truthtable, total_captured, nsamples, &d0);
         double proportion = (double)num_ones/ncaptured;
+        double max_proportion = (proportion < 1 - proportion) ? 1 - proportion : proportion;
+        objective -= num_ones * d0 - c;
+        //printf("%d %d %d %f %f\n", num_ones, d0, d0, c, objective);
+        accuracy += max_proportion * ncaptured / nsamples;
         if (print_debug) {
             printf("    %d %d %d %f\n", rules[rulelist[0]].support, rules[rulelist[0]].cardinality, ncaptured, proportion);
         }
         support_sum += rules[rulelist[0]].support;
         captured_sum += ncaptured;
         for (size_t i = 1; i < rulelist.size(); ++i) {
-            int total_ncaptured;
             curr_rule = rules[rulelist[i]];
             rule_vandnot(captured, curr_rule.truthtable, total_captured, nsamples, &ncaptured);
             rule_vor(total_captured, curr_rule.truthtable, total_captured, nsamples, &total_ncaptured);
@@ -205,6 +220,10 @@ void print_final_rulelist(const tracking_vector<unsigned short, DataStruct::Tree
             // Count number of 1's
             rule_vand(ones, captured, ones_label.truthtable, nsamples, &num_ones);
             double proportion = (double)num_ones/ncaptured;
+            double max_proportion = (proportion < 1 - proportion) ? 1 - proportion : proportion;
+            rule_vandnot(default_zeros, zeros_label.truthtable, total_captured, nsamples, &d0);
+            objective -= num_ones * d0 - c;
+            accuracy += max_proportion * ncaptured / nsamples;
             if (print_debug) {
                 printf("    %d %d %d %f\n", support, rules[rulelist[i]].cardinality, ncaptured, proportion);
                 /*
@@ -217,11 +236,26 @@ void print_final_rulelist(const tracking_vector<unsigned short, DataStruct::Tree
             support_sum += rules[rulelist[i]].support;
             captured_sum += ncaptured;
         }
-        printf("else (%s)\n\n", labels[preds.back()].features);
+        printf("else (%s)\n", labels[preds.back()].features);
+        if (print_debug) {
+            ncaptured = nsamples - total_ncaptured;
+            rule_vandnot(ones, ones_label.truthtable, total_captured, nsamples, &num_ones);
+            double proportion = (double)num_ones/ncaptured;
+            double max_proportion = (proportion < 1 - proportion) ? 1 - proportion : proportion;
+            accuracy += max_proportion * ncaptured / nsamples;
+            printf("    %d %d %d %f\n\n", ncaptured, 0, ncaptured, proportion);
+        }
+        else
+            printf("\n");
+
+        if (retaccuracy != NULL)
+            *retaccuracy = accuracy;
+        
         if (print_debug) {
             printf("nsamples: %d\n\n", nsamples);
             printf("support_sum: %d\n\n", support_sum);
             printf("captured_sum: %d\n\n", captured_sum);
+            /*
             printf("Support:\n");
             for (int i = 0; i < nrules; i++)
                 printf("%d ", rules[i].support);
@@ -229,6 +263,7 @@ void print_final_rulelist(const tracking_vector<unsigned short, DataStruct::Tree
             for (int i = 0; i < nrules; i++)
                 printf("%d ", rules[i].cardinality);
             printf("\n\n");
+            */
         }
         
         if (latex_out) {
@@ -246,6 +281,8 @@ void print_final_rulelist(const tracking_vector<unsigned short, DataStruct::Tree
         }
     } else {
         printf("if (1) then (%s)\n\n", labels[preds.back()].features);
+        if (retaccuracy != NULL)
+            *retaccuracy = (double)labels[preds[0]].support/nsamples;
 
         if (latex_out) {
             printf("\nLATEX form of OPTIMAL RULE LIST\n");
@@ -255,6 +292,9 @@ void print_final_rulelist(const tracking_vector<unsigned short, DataStruct::Tree
             printf("\\end{algorithmic}\n\n");
         }
     }
+
+    if (retobjective != NULL)
+        *retobjective = objective;
 
     ofstream f;
     printf("writing optimal rule list to: %s\n\n", fname);
