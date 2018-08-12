@@ -185,7 +185,7 @@ void print_final_rulelist(const tracking_vector<unsigned short, DataStruct::Tree
         if (print_debug) {
             printf("***********\n");
             printf("FORMAT:\nif ({rule}) then ({label})\n");
-            printf("    [support cardinality ncaptured proportion]\n");
+            printf("    support cardinality ncaptured proportion\n");
             printf("***********\n");
         }
         printf("if (%s) then (%s)\n", rules[rulelist[0]].features,
