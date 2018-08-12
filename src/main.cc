@@ -103,7 +103,7 @@ int main(int argc, char *argv[]) {
                 exit(1);
             }
             if (newfile) {
-                char text[100] = "Regularity,Length,Accuracy,Objective,Error\n";
+                char text[500] = "Regularity,Length,Accuracy,WPA_Obj,Tree_Obj,Error\n";
                 if (write(outfd, text, strlen(text)) == -1)
                     printf("Error in writing to %s: %s\n", outfile, strerror(errno));
             }
@@ -261,8 +261,8 @@ int main(int argc, char *argv[]) {
 
     // Override objective with WPA
     double obj_error = wpa_objective - tree->min_objective();
-    if (wpa || override_obj)
-        tree->update_min_objective(wpa_objective);
+    // if (wpa || override_obj)
+    //     tree->update_min_objective(wpa_objective);
 
     //double accuracy = 1 - tree->min_objective() + c*r_list.size();
 
@@ -277,7 +277,7 @@ int main(int argc, char *argv[]) {
     // Output to CSV file
     if (outfd != 0) {
         char output[100];
-        sprintf(output, "%1.20f,%lu,%1.20f,%1.20f,%1.20f\n", c, r_list.size(), accuracy, tree->min_objective(), obj_error);
+        sprintf(output, "%1.20f,%lu,%1.20f,%1.20f,%1.20f,%1.20f\n", c, r_list.size(), accuracy, wpa_objective, tree->min_objective(), obj_error);
         if(write(outfd, output, strlen(output)) == -1)
             printf("Error in writing to %s: %s\n", outfile, strerror(errno));
         else
