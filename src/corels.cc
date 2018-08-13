@@ -268,7 +268,7 @@ void evaluate_children(CacheTree* tree, Node* parent, tracking_vector<unsigned s
             lb_array[i] = lookahead_bound;
             // only add node to our datastructures if its children will be viable
             // also add falling constraint
-            /*
+            
             if (lookahead_bound < tree->min_objective() && perform_search(change_search_path) && \
                 (falling == false || has_falling_constraint(proportion, parent->proportion(), default_proportion))) {
                 double t3 = timestamp();
@@ -294,7 +294,7 @@ void evaluate_children(CacheTree* tree, Node* parent, tracking_vector<unsigned s
                     logger->addToQueueInsertionTime(time_diff(t5));
                 }
             } // else:  objective lower bound with one-step lookahead
-            */
+            
         }
         qsort(lb_array, nrules, sizeof(double), compare_doubles);
     }

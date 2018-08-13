@@ -255,10 +255,22 @@ int main(int argc, char *argv[]) {
     printf("final min_objective: %1.5f\n", tree->min_objective());
     const tracking_vector<unsigned short, DataStruct::Tree>& r_list = tree->opt_rulelist();
 
-    double accuracy, wpa_objective;
-    print_final_rulelist(r_list, tree->opt_predictions(),
-                     latex_out, rules, labels, opt_fname, verbosity.count("progress"), nsamples, nrules, &accuracy, c, &wpa_objective);
-
+    double accuracy, scores[nsamples];
+    for (int i = 0; i < nsamples; i++)
+        scores[i] = 0;
+    process_and_print_final_rulelist(r_list, tree->opt_predictions(),
+                     latex_out, rules, labels, opt_fname, verbosity.count("progress"), wpa, nsamples, nrules, scores, c, &accuracy);
+    
+    // for (int i = 0; i < nsamples; i++)
+    //     printf("%f ", scores[i]);
+    // printf("\n");
+    
+    // Calculate WPA objective
+    double wpa_objective = labels[0].support * labels[1].support;
+    for (int i = 0; i < nsamples; i++)
+        for (int j = 0; j < nsamples; j++)
+            wpa_objective -= (scores[i] > scores[j]) * (rule_isset(labels[1].truthtable, i) > (rule_isset(labels[1].truthtable, j)));
+    
     // Override objective with WPA
     double obj_error = wpa_objective - tree->min_objective();
     // if (wpa || override_obj)

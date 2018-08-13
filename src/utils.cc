@@ -100,20 +100,39 @@ std::string Logger::dumpPrefixLens() {
     return s;
 }
 
+void calculate_scores(double *scores, int nsamples, VECTOR captured, bool wpa, size_t ruleindex, double proportion)
+{
+    for (int i = 0; i < nsamples; i++) {
+        if (rule_isset(captured, i)) {
+            if (wpa)
+                *(scores+i) = -1 * (int)ruleindex;
+            else
+                *(scores+i) = proportion;
+        }
+    }
+}
+
 /*
  * Given a rulelist and predictions, will output a human-interpretable form to a file.
  */
+// Function declaration of core function
+void process_and_print_final_rulelist(
+    const tracking_vector<unsigned short, DataStruct::Tree>& rulelist, 
+    const tracking_vector<bool, DataStruct::Tree>& preds, 
+    const bool latex_out, 
+    const rule_t rules[], 
+    const rule_t labels[], 
+    char fname[], 
+    int print_progress, 
+    bool print_debug = false, 
+    bool wpa = false, 
+    int nsamples = 0, 
+    int nrules = 0, 
+    double *retscores = NULL, 
+    double c = 0, 
+    double *retaccuracy = NULL);
 
-void print_final_rulelist(const tracking_vector<unsigned short, DataStruct::Tree>& rulelist,
-                          const tracking_vector<bool, DataStruct::Tree>& preds,
-                          const bool latex_out,
-                          const rule_t rules[],
-                          const rule_t labels[],
-                          char fname[],
-                          int print_progress, bool print_debug,
-                          int nsamples = 0, int nrules = 0, double *retaccuracy = NULL, double c = 0,
-                          double *retobjective = NULL);
-
+// Wrapper functions for core function
 void print_final_rulelist(const tracking_vector<unsigned short, DataStruct::Tree>& rulelist,
                           const tracking_vector<bool, DataStruct::Tree>& preds,
                           const bool latex_out,
@@ -122,30 +141,43 @@ void print_final_rulelist(const tracking_vector<unsigned short, DataStruct::Tree
                           char fname[],
                           int print_progress)
 {
-    print_final_rulelist(rulelist, preds, latex_out, rules, labels, fname, print_progress, false);
+    process_and_print_final_rulelist(rulelist, preds, latex_out, rules, labels, fname, print_progress);
 }
 
-void print_final_rulelist(const tracking_vector<unsigned short, DataStruct::Tree>& rulelist,
-                          const tracking_vector<bool, DataStruct::Tree>& preds,
-                          const bool latex_out,
-                          const rule_t rules[],
-                          const rule_t labels[],
-                          char fname[],
-                          int print_progress, int nsamples, int nrules, double *retaccuracy, double c,
-                          double *retobjective)
+void process_and_print_final_rulelist(
+    const tracking_vector<unsigned short, DataStruct::Tree>& rulelist,
+    const tracking_vector<bool, DataStruct::Tree>& preds,
+    const bool latex_out,
+    const rule_t rules[],
+    const rule_t labels[],
+    char fname[],
+    int print_progress,
+    bool wpa,
+    int nsamples,
+    int nrules,
+    double *retscores,
+    double c,
+    double *retaccuracy)
 {
-    print_final_rulelist(rulelist, preds, latex_out, rules, labels, fname, print_progress, true, nsamples, nrules, retaccuracy, c, retobjective);
+    process_and_print_final_rulelist(rulelist, preds, latex_out, rules, labels, fname, print_progress, true, wpa, nsamples, nrules, retscores, c, retaccuracy);
 }
-
-void print_final_rulelist(const tracking_vector<unsigned short, DataStruct::Tree>& rulelist,
-                          const tracking_vector<bool, DataStruct::Tree>& preds,
-                          const bool latex_out,
-                          const rule_t rules[],
-                          const rule_t labels[],
-          
-                          char fname[],
-                          int print_progress, bool print_debug = false,
-                          int nsamples, int nrules, double *retaccuracy, double c, double *retobjective) {
+// Core function implementation
+void process_and_print_final_rulelist(
+    const tracking_vector<unsigned short, DataStruct::Tree>& rulelist,
+    const tracking_vector<bool, DataStruct::Tree>& preds,
+    const bool latex_out,
+    const rule_t rules[],
+    const rule_t labels[],         
+    char fname[],
+    int print_progress,
+    bool print_debug,
+    bool wpa,
+    int nsamples,
+    int nrules,
+    double *retscores,
+    double c,
+    double *retaccuracy)
+{
     assert(rulelist.size() == preds.size() - 1);
     
     // Print entire rules array
@@ -166,13 +198,20 @@ void print_final_rulelist(const tracking_vector<unsigned short, DataStruct::Tree
     //         printf("%d %d\n", rules[i].support, rules[i].cardinality);
     //     }
     // }
-    
-
+    double accuracy = 0;
     printf("\nOPTIMAL RULE LIST\n");
-    double objective = labels[0].support * labels[1].support;
+    //double objective = labels[0].support * labels[1].support;
     //printf("initial obj: %f\n", objective);
     if (rulelist.size() > 0) {
-        double accuracy = 0;
+        if (print_debug) {
+            printf("***********\n");
+            printf("FORMAT:\nif ({rule}) then ({label})\n");
+            printf("    support cardinality ncaptured proportion\n");
+            printf("***********\n");
+        }
+        printf("if (%s) then (%s)\n", rules[rulelist[0]].features,
+               labels[preds[0]].features);
+  
         VECTOR captured, total_captured;
         rule_vinit(nsamples, &captured);
         rule_vinit(nsamples, &total_captured);
@@ -182,14 +221,6 @@ void print_final_rulelist(const tracking_vector<unsigned short, DataStruct::Tree
         int ncaptured = rules[rulelist[0]].support; // Only for first rule
         int total_ncaptured = ncaptured;
         int support_sum = 0, captured_sum = 0;
-        if (print_debug) {
-            printf("***********\n");
-            printf("FORMAT:\nif ({rule}) then ({label})\n");
-            printf("    support cardinality ncaptured proportion\n");
-            printf("***********\n");
-        }
-        printf("if (%s) then (%s)\n", rules[rulelist[0]].features,
-               labels[preds[0]].features);
         // Make copy to remove const
         rule_t ones_label = labels[1];
         rule_t zeros_label = labels[0];
@@ -202,9 +233,11 @@ void print_final_rulelist(const tracking_vector<unsigned short, DataStruct::Tree
         rule_vandnot(default_zeros, zeros_label.truthtable, total_captured, nsamples, &d0);
         double proportion = (double)num_ones/ncaptured;
         double max_proportion = (proportion < 1 - proportion) ? 1 - proportion : proportion;
-        objective -= num_ones * d0 - c;
+        //objective -= num_ones * d0 - c;
         //printf("%d %d %d %f %f\n", num_ones, d0, d0, c, objective);
         accuracy += max_proportion * ncaptured / nsamples;
+        if (retscores != NULL)
+            calculate_scores(retscores, nsamples, captured, wpa, 0, proportion);
         if (print_debug) {
             printf("    %d %d %d %f\n", rules[rulelist[0]].support, rules[rulelist[0]].cardinality, ncaptured, proportion);
         }
@@ -222,8 +255,10 @@ void print_final_rulelist(const tracking_vector<unsigned short, DataStruct::Tree
             double proportion = (double)num_ones/ncaptured;
             double max_proportion = (proportion < 1 - proportion) ? 1 - proportion : proportion;
             rule_vandnot(default_zeros, zeros_label.truthtable, total_captured, nsamples, &d0);
-            objective -= num_ones * d0 - c;
+            //objective -= num_ones * d0 - c;
             accuracy += max_proportion * ncaptured / nsamples;
+            if (retscores != NULL)
+                calculate_scores(retscores, nsamples, captured, wpa, i, proportion);
             if (print_debug) {
                 printf("    %d %d %d %f\n", support, rules[rulelist[i]].cardinality, ncaptured, proportion);
                 /*
@@ -237,19 +272,19 @@ void print_final_rulelist(const tracking_vector<unsigned short, DataStruct::Tree
             captured_sum += ncaptured;
         }
         printf("else (%s)\n", labels[preds.back()].features);
-        if (print_debug) {
-            ncaptured = nsamples - total_ncaptured;
-            rule_vandnot(ones, ones_label.truthtable, total_captured, nsamples, &num_ones);
-            double proportion = (double)num_ones/ncaptured;
-            double max_proportion = (proportion < 1 - proportion) ? 1 - proportion : proportion;
-            accuracy += max_proportion * ncaptured / nsamples;
+        rule_not(captured, total_captured, nsamples, &ncaptured);
+        // Recalculate ncaptured because rule_not() does not handle 2's complement
+        ncaptured = nsamples - total_ncaptured;
+        rule_vandnot(ones, ones_label.truthtable, total_captured, nsamples, &num_ones);
+        proportion = (double)num_ones/ncaptured;
+        max_proportion = (proportion < 1 - proportion) ? 1 - proportion : proportion;
+        accuracy += max_proportion * ncaptured / nsamples;
+        if (retscores != NULL)
+            calculate_scores(retscores, nsamples, captured, wpa, rulelist.size(), proportion);
+        if (print_debug)
             printf("    %d %d %d %f\n\n", ncaptured, 0, ncaptured, proportion);
-        }
         else
             printf("\n");
-
-        if (retaccuracy != NULL)
-            *retaccuracy = accuracy;
         
         if (print_debug) {
             printf("nsamples: %d\n\n", nsamples);
@@ -281,8 +316,7 @@ void print_final_rulelist(const tracking_vector<unsigned short, DataStruct::Tree
         }
     } else {
         printf("if (1) then (%s)\n\n", labels[preds.back()].features);
-        if (retaccuracy != NULL)
-            *retaccuracy = (double)labels[preds[0]].support/nsamples;
+        accuracy = (double)labels[preds[0]].support/nsamples;
 
         if (latex_out) {
             printf("\nLATEX form of OPTIMAL RULE LIST\n");
@@ -293,8 +327,8 @@ void print_final_rulelist(const tracking_vector<unsigned short, DataStruct::Tree
         }
     }
 
-    if (retobjective != NULL)
-        *retobjective = objective;
+    if (retaccuracy != NULL)
+        *retaccuracy = accuracy;
 
     ofstream f;
     printf("writing optimal rule list to: %s\n\n", fname);

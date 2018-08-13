@@ -422,13 +422,19 @@ void print_final_rulelist(const tracking_vector<unsigned short, DataStruct::Tree
                           char fname[],
    			              int print_progress);
 
-void print_final_rulelist(const tracking_vector<unsigned short, DataStruct::Tree>& rulelist,
-                          const tracking_vector<bool, DataStruct::Tree>& preds,
-                          const bool latex_out,
-                          const rule_t rules[],
-                          const rule_t labels[],
-                          char fname[],
-   			              int print_progress, int nsamples, int nrules, double *retaccuracy, double c,
-                             double *retobjective);
+void process_and_print_final_rulelist(
+    const tracking_vector<unsigned short, DataStruct::Tree>& rulelist,
+    const tracking_vector<bool, DataStruct::Tree>& preds,
+    const bool latex_out,
+    const rule_t rules[],
+    const rule_t labels[],
+    char fname[],
+    int print_progress,
+    bool wpa,
+    int nsamples,
+    int nrules,
+    double *retscores,
+    double c,
+    double *retaccuracy);
 
 void print_machine_info();
