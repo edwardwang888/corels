@@ -34,14 +34,15 @@ def run(r, outfile, dataset, falling, wpa, max_num_nodes, b, c, p, override_obj)
 def main():
     parser = argparse.ArgumentParser(description="Run test cases on corels")
     parser.add_argument("dataset", help="dataset to use (in ../data/)")
-    parser.add_argument("-r", help="starting regularization", action="store", type=float, dest="r_start")
+    parser.add_argument("-r", help="starting regularization", action="store", type=float, default=0.7515, dest="r_start")
     parser.add_argument("-b", help="breadth first search", action="store_true", dest="b")
     parser.add_argument("-c", help="best first search policy", type=int, choices=[1,2,3,4], action="store", dest="c")
     parser.add_argument("-p", help="symmetry aware map", type=int, choices=[0,1,2], action="store", dest="p")
     #parser.add_argument("--compare", help="compare runs by varying this parameter", action="store", choices=["falling", "wpa"], dest="compare")
     parser.add_argument("-d", help="use falling constraint", action="store_true", dest="falling")
     parser.add_argument("-w", help="use WPA objective function", action="store_true", dest="wpa")
-    parser.add_argument("-W", help="add text to file name", action="store", dest="W")
+    parser.add_argument("-W", help="add text to file name", action="store", dest="text")
+    parser.add_argument("-s", help="regularization step", action="store", type=float, dest="step")
     parser.add_argument("-n", help="maximum number of nodes (default 100000)", type=int, action="store", dest="max_num_nodes")
     parser.add_argument("--plot", help="generate plots", action="store_true", dest="plot")
     args = parser.parse_args()
@@ -74,10 +75,14 @@ def main():
         outfile += "_c{}".format(args.c)
     if args.p != None:
         outfile += "_p{}".format(args.p)
+    if args.r_start != None:
+        outfile += "_r{}".format(args.r_start)
+    if args.step != None:
+        outfile += "_s{}".format(args.step)
     if args.max_num_nodes != None:
         outfile += "_n{}".format(args.max_num_nodes)
-    if args.W != None:
-        outfile += "_{}".format(args.W)
+    if args.text != None:
+        outfile += "_{}".format(args.text)
 
     outfile += ".csv"
 
@@ -90,18 +95,29 @@ def main():
         else:
             sys.exit()
     
-    override_obj = args.wpa or args.W
-    r = 0.7515
-    for i in range(200):
-        if args.r_start == None or r <= args.r_start:
-            run(r, outfile, args.dataset, args.falling, args.wpa, args.max_num_nodes, args.b, args.c, args.p, override_obj)
+    override_obj = True
+    r = args.r_start
+    if args.step != None and args.r_start != None:
+        iter = int(args.r_start/args.step)
+    else:
+        iter = 200
+    for i in range(iter):
+        run(r, outfile, args.dataset, args.falling, args.wpa, args.max_num_nodes, args.b, args.c, args.p, override_obj)
         # if args.compare != None:
         #     run(r, outfile, args.dataset, args.falling, args.wpa, args.max_num_nodes, args.b, args.c, args.p, False)
             
-        r /= 1.0525
+        if args.step == None:
+            r /= 1.0525
+        else:
+            r -= args.step
         
+    while r > 0.0000001:
+        run(r, outfile, args.dataset, args.falling, args.wpa, args.max_num_nodes, args.b, args.c, args.p, override_obj)
+        r /= 1.0525
+
     #Run with zero regularity
     run(0, outfile, args.dataset, args.falling, args.wpa, args.max_num_nodes, args.b, args.c, args.p, override_obj)
+    
     # if args.compare != None:
     #     run(0, outfile, args.dataset, args.falling, args.wpa, args.max_num_nodes, args.b, args.c, args.p, False)
 
