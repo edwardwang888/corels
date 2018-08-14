@@ -2,7 +2,6 @@ import sys
 sys.path[:0] = ["/Library/Python/2.7/site-packages/"]
 import numpy as np
 import matplotlib.pyplot as plt
-import os
 
 # all_files = ["wpa.csv", "falling.csv", "default.csv", "default.csv"]
 # files = []
@@ -37,7 +36,7 @@ else:
     marker = ['1','2','3','4','+','x']
 
 for i in data:
-    i.sort(order=['Objective'])
+    i.sort(order=['Regularization'])
 
 #Plot regularization vs. objective value
 plt.figure(1)
