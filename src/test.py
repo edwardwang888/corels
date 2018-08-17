@@ -56,7 +56,7 @@ def main():
         outfile += "_c{}".format(args.c)
     if args.p != None:
         outfile += "_p{}".format(args.p)
-    if args.r_start != None:
+    if args.r_start != parser.get_default('r_start'):
         outfile += "_r{}".format(args.r_start)
     if args.step != None:
         outfile += "_s{}".format(args.step)
