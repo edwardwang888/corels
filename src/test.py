@@ -2,7 +2,7 @@ import argparse
 import os
 import sys
 
-def run(r, outfile, dataset, falling, wpa, max_num_nodes, b, c, p, override_obj):
+def run(r, outfile, dataset, falling, wpa, max_num_nodes, b, c, p):
     data_minor = "../data/{}.minor".format(dataset)
     #Start assembling command string
     cmd = "./corels -r {} ".format(r)
@@ -16,8 +16,6 @@ def run(r, outfile, dataset, falling, wpa, max_num_nodes, b, c, p, override_obj)
         cmd = cmd + "-d "
     if wpa:
         cmd = cmd + '-w '
-    # if override_obj:
-    #     cmd += '-W '
     if max_num_nodes != None:
         cmd += "-n {} ".format(max_num_nodes)
 
@@ -44,25 +42,8 @@ def main():
     parser.add_argument("-W", help="add text to file name", action="store", dest="text")
     parser.add_argument("-s", help="regularization step", action="store", type=float, dest="step")
     parser.add_argument("-n", help="maximum number of nodes (default 100000)", type=int, action="store", dest="max_num_nodes")
-    parser.add_argument("--plot", help="generate plots", action="store_true", dest="plot")
     args = parser.parse_args()
     
-    # Default value
-    # if args.b == False and args.c == None:
-    #     args.c = 2
-
-    # if args.compare != None:
-    #     outfile = args.compare + ".csv"
-    
-    # for i in ["default.csv", "falling.csv", "wpa.csv"]:
-    #     if os.access(i, os.F_OK):
-    #         os.unlink(i);
-    """
-    if os.access("default.csv", os.F_OK):
-        os.unlink("default.csv")
-    if args.compare != None and os.access(outfile, os.F_OK):
-        os.unlink(outfile)
-    """
     # Create filename
     outfile = args.dataset
     if args.wpa:
@@ -95,16 +76,13 @@ def main():
         else:
             sys.exit()
     
-    override_obj = True
     r = args.r_start
     if args.step != None and args.r_start != None:
         iter = int(args.r_start/args.step)
     else:
         iter = 200
     for i in range(iter):
-        run(r, outfile, args.dataset, args.falling, args.wpa, args.max_num_nodes, args.b, args.c, args.p, override_obj)
-        # if args.compare != None:
-        #     run(r, outfile, args.dataset, args.falling, args.wpa, args.max_num_nodes, args.b, args.c, args.p, False)
+        run(r, outfile, args.dataset, args.falling, args.wpa, args.max_num_nodes, args.b, args.c, args.p)
             
         if args.step == None:
             r /= 1.0525
@@ -112,26 +90,12 @@ def main():
             r -= args.step
         
     while r > 0.0000001:
-        run(r, outfile, args.dataset, args.falling, args.wpa, args.max_num_nodes, args.b, args.c, args.p, override_obj)
+        run(r, outfile, args.dataset, args.falling, args.wpa, args.max_num_nodes, args.b, args.c, args.p)
         r /= 1.0525
 
     #Run with zero regularity
     run(0, outfile, args.dataset, args.falling, args.wpa, args.max_num_nodes, args.b, args.c, args.p, override_obj)
     
-    # if args.compare != None:
-    #     run(0, outfile, args.dataset, args.falling, args.wpa, args.max_num_nodes, args.b, args.c, args.p, False)
-
-    """     
-    os.system("cat default.csv | uniq > default1.csv")
-    os.rename("default1.csv", "default.csv")  
-    if args.falling:
-        os.system("cat falling.csv | uniq > falling1.csv")
-        os.rename("falling1.csv", "falling.csv")
-    """
-    
-    if args.plot:
-        os.system("python plot.py")
-
     
 
 if __name__ == "__main__":
