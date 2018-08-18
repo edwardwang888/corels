@@ -6,7 +6,7 @@ import os
 import argparse
 import subprocess
 
-def run(X_train, y_train, outfile, r_start):
+def run(X_train, y_train, outfile, r_start, X_test, y_test):
       if os.access(outfile, os.F_OK):
             c = raw_input("File {} already exists. Are you sure you want to continue? (y/N/a) ".format(outfile))
             if c.lower() == "y":
@@ -21,9 +21,9 @@ def run(X_train, y_train, outfile, r_start):
             sys.exit(1)
       
       print("Writing to file: {}".format(outfile))
-      nsamples = len(X_train)
+      nsamples = len(X_test)
       r = 1
-      n1 = np.sum(y_train)
+      n1 = np.sum(y_test)
       for i in range(140):
             if r <= r_start:
                   if "logistic" in outfile:
@@ -32,22 +32,43 @@ def run(X_train, y_train, outfile, r_start):
                         clf = RandomForestClassifier(n_estimators=int(1/r), n_jobs=2)
                   
                   clf.fit(X_train, y_train)
-                  scores = clf.predict_proba(X_train)
+                  scores = clf.predict_proba(X_test)
 
                   initial_obj = n1 * (nsamples - n1)
                   score_string = ""
                   label_string = ""
                   for i in range(nsamples):
                         score_string += "{} ".format(scores[i][1])
-                        label_string += "{} ".format(int(y_train[i]))
+                        label_string += "{} ".format(int(y_test[i]))
                   
-                  subprocess.Popen("./baseline {} {} {} ".format(outfile, initial_obj, r) + score_string + label_string, shell=True)
+                  p = subprocess.Popen("./baseline {} {} {} ".format(outfile, initial_obj, r) + score_string + label_string, shell=True)
+                  p.wait()
                         
-            r /= 1.0525   
+            r /= 1.0525
+
+def get_data(dataset, binary):
+      if binary:
+            file = "../data/{}-binary.csv".format(dataset)
+            if (os.access(file, os.F_OK)) == False:
+                  file = "../data/{}_binary.csv".format(dataset)
+            data = np.genfromtxt(file, delimiter=',', skip_header=1)
+            ncol = data.shape[data.ndim-1]
+            X_data = data[:,0:ncol-1]
+            y_data = data[:,ncol-1]
+
+      else:
+            X_data = np.genfromtxt("../data/{}.out".format(dataset), delimiter=' ')
+            X_data = X_data[:,1:]
+            X_data = X_data.transpose()
+            y_data = np.genfromtxt("../data/{}.label".format(dataset), delimiter=' ', skip_header=1)
+            y_data = y_data[1:]
+
+      return X_data, y_data    
 
 def main():
       parser = argparse.ArgumentParser(description="Run baseline tests")
-      parser.add_argument("dataset", help="Training data (in ../data/)")
+      parser.add_argument("data_train", help="Training data (in ../data/)")
+      parser.add_argument("data_test", help="Test data (in ../data/)")
       parser.add_argument("--binary", help="Use binary csv", action="store_true", dest="binary")
       parser.add_argument("--logistic", help="Run logistic regression", action="store_true", dest="logistic")
       parser.add_argument("--rforest", help="Run random forests classifier", action="store_true", dest="rforest")
@@ -61,32 +82,21 @@ def main():
 
       os.system("gcc -Wall -Wextra -o baseline baseline.c")
 
-      if args.binary:
-            file = "../data/{}-binary.csv".format(args.dataset)
-            if (os.access(file, os.F_OK)) == False:
-                  file = "../data/{}_binary.csv".format(args.dataset)
-            data = np.genfromtxt(file, delimiter=',', skip_header=1)
-            ncol = data.shape[data.ndim-1]
-            X_train = data[:,0:ncol-1]
-            y_train = data[:,ncol-1]
-
-      else:
-            X_train = np.genfromtxt("../data/{}.out".format(args.dataset), delimiter=' ')
-            X_train = X_train[:,1:]
-            X_train = X_train.transpose()
-            y_train = np.genfromtxt("../data/{}.label".format(args.dataset), delimiter=' ', skip_header=1)
-            y_train = y_train[1:]
+      X_train, y_train = get_data(args.data_train, args.binary)
+      X_test, y_test = get_data(args.data_test, args.binary)
 
       text = ""
       if args.binary:
             text += "_binary"
+      if args.data_train != args.data_test:
+            text += "_val"
       if args.text != None:
             text += "_{}".format(args.text)
 
       if args.logistic:
-            run(X_train, y_train, "{}_logistic{}.csv".format(args.dataset, text), args.r_start)
+            run(X_train, y_train, "{}_logistic{}.csv".format(args.data_train, text), args.r_start, X_test, y_test)
       if args.rforest:
-            run(X_train, y_train, "{}_rforest{}.csv".format(args.dataset, text), args.r_start)
+            run(X_train, y_train, "{}_rforest{}.csv".format(args.data_train, text), args.r_start, X_test, y_test)
 
 
 if __name__ == "__main__":
