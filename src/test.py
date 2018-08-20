@@ -8,6 +8,7 @@ from time import sleep
 import numpy as np
 from sklearn import metrics
 import matplotlib.pyplot as plt
+import roc
 
 
 def run(r, outfile, outfile_roc, data_train, data_test, falling, wpa, max_num_nodes, b, c, p):
@@ -71,32 +72,7 @@ def run(r, outfile, outfile_roc, data_train, data_test, falling, wpa, max_num_no
     y_test = y_test[1:y_test.shape[0]]
     scores = np.genfromtxt([stdout[stdout.find('\n'):]], delimiter=' ')
     fpr, tpr, thresholds = metrics.roc_curve(y_test, scores)
-    with open(outfile_roc, 'ab') as f:
-        for i in range(fpr.shape[0]):
-            f.write("{} ".format(fpr[i]))
-        f.write("\n")
-        for i in range(tpr.shape[0]):
-            f.write("{} ".format(tpr[i]))
-        f.write("\n")
-        f.close()
-
-
-def plot_roc(outfile_roc, i=1):
-    plt.figure(i)
-    with open(outfile_roc, 'rb') as f:
-        data = f.readlines()
-    
-    for i in range(len(data)/2):
-        fpr = np.genfromtxt([data[2*i].rstrip()])
-        tpr = np.genfromtxt([data[2*i+1].rstrip()])
-        plt.plot(fpr, tpr)
-
-    plt.title("Receiver Operating Characteristic")
-    plt.xlabel('False Positive Rate')
-    plt.ylabel('True Positive Rate')
-    plt.plot([0], [0], label=outfile_roc[:-4])
-    plt.legend()
-    plt.show()
+    roc.write_to_file(fpr, tpr, outfile_roc)
 
 
 def main():
@@ -104,7 +80,6 @@ def main():
     parser.add_argument("data_train", help="Training data (in ../data/)")
     parser.add_argument("data_test", help="Test data (in ../data)")
     parser.add_argument("--roc", help="Plot ROC curve", action="store_true", dest="roc")
-    #parser.add_argument("--val", help="perform cross validation", action="store_true", dest="val")
     parser.add_argument("-r", help="starting regularization", action="store", type=float, default=0.7515, dest="r_start")
     parser.add_argument("-b", help="breadth first search", action="store_true", dest="b")
     parser.add_argument("-c", help="best first search policy", type=int, choices=[1,2,3,4], action="store", dest="c")
@@ -156,7 +131,8 @@ def main():
         elif c.lower() == "a":
             pass
         else:
-            plot_roc(outfile_roc)
+            roc.plot(outfile_roc)
+            roc.show()
             sys.exit()
 
     if os.access(outfile, os.F_OK):
@@ -191,9 +167,9 @@ def main():
     run(0, outfile, outfile_roc, args.data_train, args.data_test, args.falling, args.wpa, args.max_num_nodes, args.b, args.c, args.p)
 
     if args.roc:
-        plot_roc(outfile_roc)
-    
-    
+        roc.plot(outfile_roc)
+        roc.show()
+   
 
 if __name__ == "__main__":
     main()
