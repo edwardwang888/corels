@@ -1,28 +1,37 @@
 import sys
+sys.path[:0] = ["/Library/Python/2.7/site-packages/", "/Users/edwardwang/Documents/falling_rule_list/"]
 import numpy as np
+import pandas as pd
 from sklearn import linear_model
 from sklearn.ensemble import RandomForestClassifier
+import monotonic.monotonic.sklearn_wrappers as sklearn_wrappers
 import os
 import argparse
 import subprocess
+from sklearn import metrics
+import matplotlib.pyplot as plt
 
-def run(X_train, y_train, outfile, r_start, X_test, y_test):
-      if os.access(outfile, os.F_OK):
+def run(X_train, y_train, outfile, r_start, X_test, y_test, roc):
+      if os.access(outfile, os.F_OK) and roc == False:
             c = raw_input("File {} already exists. Are you sure you want to continue? (y/N/a) ".format(outfile))
             if c.lower() == "y":
                   os.unlink(outfile)
             elif c.lower() == "a":
                   pass
             else:
-                  sys.exit()
+                  return
 
-      if "logistic" not in outfile and "rforest" not in outfile:
+      if "logistic" not in outfile and "rforest" not in outfile and "frl" not in outfile:
             print("Invalid classfier")
             sys.exit(1)
       
-      print("Writing to file: {}".format(outfile))
+      if roc == False:
+            print("Writing to file: {}".format(outfile))
+      else:
+            print("\nModel: {}".format(outfile[:-4]))
+
       nsamples = len(X_test)
-      r = 1
+      r = r_start
       n1 = np.sum(y_test)
       for i in range(140):
             if r <= r_start:
@@ -30,19 +39,31 @@ def run(X_train, y_train, outfile, r_start, X_test, y_test):
                         clf = linear_model.LogisticRegression(C=1/r)
                   elif "rforest" in outfile:
                         clf = RandomForestClassifier(n_estimators=int(1/r), n_jobs=2)
+                  elif "frl" in outfile:
+                        clf = sklearn_wrappers.monotonic_sklearn_fitter(num_steps = int(1/r), min_supp = 5, max_clauses = 2, prior_length_mean = 8, prior_gamma_l_alpha = 1., prior_gamma_l_beta = 0.1, temperature = 1)
                   
-                  clf.fit(X_train, y_train)
-                  scores = clf.predict_proba(X_test)
+                  predictor = clf.fit(X_train, y_train)
+                  if "frl" not in outfile:
+                        scores = clf.predict_proba(X_test)[:,1]
+                  else:
+                        scores = predictor.decision_function(X_test)
 
-                  initial_obj = n1 * (nsamples - n1)
-                  score_string = ""
-                  label_string = ""
-                  for i in range(nsamples):
-                        score_string += "{} ".format(scores[i][1])
-                        label_string += "{} ".format(int(y_test[i]))
-                  
-                  p = subprocess.Popen("./baseline {} {} {} ".format(outfile, initial_obj, r) + score_string + label_string, shell=True)
-                  p.wait()
+                  if roc == False:
+                        initial_obj = n1 * (nsamples - n1)
+                        score_string = ""
+                        label_string = ""
+                        for i in range(nsamples):
+                              score_string += "{} ".format(scores[i])
+                              label_string += "{} ".format(int(y_test[i]))
+                        
+                        p = subprocess.Popen("./baseline {} {} {} ".format(outfile, initial_obj, r) + score_string + label_string, shell=True)
+                        p.wait()
+
+
+                  else:
+                        print(r)
+                        fpr, tpr, thresholds = metrics.roc_curve(y_test, scores)
+                        plt.plot(fpr, tpr)
                         
             r /= 1.0525
 
@@ -63,20 +84,30 @@ def get_data(dataset, binary):
             y_data = np.genfromtxt("../data/{}.label".format(dataset), delimiter=' ', skip_header=1)
             y_data = y_data[1:]
 
-      return X_data, y_data    
+      return X_data, y_data
+
+
+def plot_roc(name, args):
+      plt.title('Receiver Operating Characteristic\n(train = {}, test = {})'.format(args.data_train, args.data_test))
+      plt.xlabel('False Positive Rate')
+      plt.ylabel('True Positive Rate')
+      plt.plot([0], [0], label=name)
+      plt.legend()  
 
 def main():
       parser = argparse.ArgumentParser(description="Run baseline tests")
       parser.add_argument("data_train", help="Training data (in ../data/)")
       parser.add_argument("data_test", help="Test data (in ../data/)")
-      parser.add_argument("--binary", help="Use binary csv", action="store_true", dest="binary")
-      parser.add_argument("--logistic", help="Run logistic regression", action="store_true", dest="logistic")
-      parser.add_argument("--rforest", help="Run random forests classifier", action="store_true", dest="rforest")
+      parser.add_argument("--bin", help="Use binary csv", action="store_true", dest="binary")
+      parser.add_argument("--log", help="Run logistic regression", action="store_true", dest="logistic")
+      parser.add_argument("--rf", help="Run random forests classifier", action="store_true", dest="rforest")
+      parser.add_argument("--frl", help="Run falling rule lists classifier", action="store_true", dest="frl")
+      parser.add_argument("--roc", help="Plot ROC curve", action="store_true", dest="roc")
       parser.add_argument("-r", help="starting regularization", type=float, default=1, action="store", dest="r_start")
       parser.add_argument("-W", help="append text to filename", action="store", dest="text")
       args = parser.parse_args()
 
-      if args.logistic == False and args.rforest == False:
+      if args.logistic == False and args.rforest == False and args.frl == False:
             print("No classifier specified")
             sys.exit(1)
 
@@ -89,14 +120,33 @@ def main():
       if args.binary:
             text += "_binary"
       if args.data_train != args.data_test:
-            text += "_val"
+            text += "_val-{}".format(args.data_test)
       if args.text != None:
             text += "_{}".format(args.text)
 
       if args.logistic:
-            run(X_train, y_train, "{}_logistic{}.csv".format(args.data_train, text), args.r_start, X_test, y_test)
+            if args.roc:
+                  plt.figure(1)
+                  plot_roc("logistic", args)
+
+            run(X_train, y_train, "{}_logistic{}.csv".format(args.data_train, text), args.r_start, X_test, y_test, args.roc)
+
       if args.rforest:
-            run(X_train, y_train, "{}_rforest{}.csv".format(args.data_train, text), args.r_start, X_test, y_test)
+            if args.roc:
+                  plt.figure(2)
+                  plot_roc("rforest", args)
+            
+            run(X_train, y_train, "{}_rforest{}.csv".format(args.data_train, text), args.r_start, X_test, y_test, args.roc)
+
+      if args.frl:
+            if args.roc:
+                  plt.figure(3)
+                  plot_roc("frl", args)
+
+            run(X_train, y_train, "{}_frl{}.csv".format(args.data_train, text), args.r_start, X_test, y_test, args.roc)
+
+      if args.roc:
+            plt.show()
 
 
 if __name__ == "__main__":

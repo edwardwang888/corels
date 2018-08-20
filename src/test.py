@@ -1,13 +1,17 @@
 import argparse
 import os
 import sys
+sys.path[:0] = ["/Library/Python/2.7/site-packages/"]
 import subprocess
 import csv
 from time import sleep
+import numpy as np
+from sklearn import metrics
+import matplotlib.pyplot as plt
 
 
-def run(r, outfile, dataset, falling, wpa, max_num_nodes, b, c, p, val):
-    data_minor = "../data/{}.minor".format(dataset)
+def run(r, outfile, outfile_roc, data_train, data_test, falling, wpa, max_num_nodes, b, c, p):
+    data_minor = "../data/{}.minor".format(data_train)
     #Start assembling command string
     cmd = "./corels -r {} ".format(r)
     if b:
@@ -22,62 +26,85 @@ def run(r, outfile, dataset, falling, wpa, max_num_nodes, b, c, p, val):
         cmd = cmd + '-w '
     if max_num_nodes != None:
         cmd += "-n {} ".format(max_num_nodes)
-
-    if val == False:
-        cmd += "-o {} ".format(outfile)   
-        if os.access(data_minor, os.F_OK) == False:
-            cmd = cmd + "../data/{0}.out ../data/{0}.label".format(dataset)
-        else:
-            cmd = cmd + "../data/{0}.out ../data/{0}.label ../data/{0}.minor".format(dataset)
-            
-        print("\n" + cmd)
-        subprocess.Popen(cmd, shell=True)
-
-    ## Perform cross validation
+    if os.access(data_minor, os.F_OK) == False:
+        cmd = cmd + "../data/{0}.out ../data/{0}.label".format(data_train)
     else:
-        if os.access(data_minor, os.F_OK) == False:
-            cmd = cmd + "../data/{0}.out ../data/{0}.label".format(dataset + "_train")
-        else:
-            cmd = cmd + "../data/{0}.out ../data/{0}.label ../data/{0}.minor".format(dataset + "_train")
+        cmd = cmd + "../data/{0}.out ../data/{0}.label ../data/{0}.minor".format(data_train)
 
-        # Execute CORELS on training data
-        print(cmd)
-        p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-        stdout = p.communicate()[0]
-        print(stdout)
+    # Execute CORELS on training data
+    print(cmd)
+    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+    stdout = p.communicate()[0]
+    print(stdout)
 
-        # Read in rule list from log file
-        start = stdout.find("../logs/")
-        end = stdout.find("\n", start)
-        rulelist_file = stdout[start:end]
-        with open(rulelist_file, 'rb') as csvfile:
-            csvreader = csv.reader(csvfile, delimiter=';')
-            rules = csvreader.next()
-        
-        # Generate cross validation command string
-        test_data = "{}_test".format(dataset)
-        cmd1 = ['./cross-validate']
-        cmd1.append("../data/{}.out".format(test_data))
-        cmd1.append("../data/{}.label".format(test_data))
-        for i in range(len(rules)-1):
-            # Remove predicition from rules
-            cmd1.append(rules[i][:rules[i].find('~')])
+    # Read in rule list from log file
+    if p.poll() != 0:
+        return
+    start = stdout.find("../logs/")
+    end = stdout.find("\n", start)
+    rulelist_file = stdout[start:end]
+    with open(rulelist_file, 'rb') as csvfile:
+        csvreader = csv.reader(csvfile, delimiter=';')
+        rules = csvreader.next()
+    
+    # Generate test command string
+    cmd1 = ['./test']
+    cmd1.append("../data/{}.out".format(data_test))
+    cmd1.append("../data/{}.label".format(data_test))
+    for i in range(len(rules)-1):
+        # Remove predicition from rules
+        cmd1.append(rules[i][:rules[i].find('~')])
 
-        # Run cross validation and write objective value to file
-        p = subprocess.Popen(cmd1, stdout=subprocess.PIPE)
-        objective = p.communicate()[0]
-        output = "{} {}".format(r, objective)
-        print(cmd1)
-        print(output + "\n")
-        f = open(outfile, 'ab')
-        f.write(output + "\n")
+    # Calculate objective and ROC
+    p = subprocess.Popen(cmd1, stdout=subprocess.PIPE)
+    stdout = p.communicate()[0]
+
+    objective = stdout[:stdout.find('\n')]
+    output = "{} {}".format(r, objective)
+    print(cmd1)
+    print(output + "\n")
+    f = open(outfile, 'ab')
+    f.write(output + "\n")
+    f.close()
+
+    y_test = np.genfromtxt("../data/{}.label".format(data_test), delimiter = ' ', skip_header=1)
+    y_test = y_test[1:y_test.shape[0]]
+    scores = np.genfromtxt([stdout[stdout.find('\n'):]], delimiter=' ')
+    fpr, tpr, thresholds = metrics.roc_curve(y_test, scores)
+    with open(outfile_roc, 'ab') as f:
+        for i in range(fpr.shape[0]):
+            f.write("{} ".format(fpr[i]))
+        f.write("\n")
+        for i in range(tpr.shape[0]):
+            f.write("{} ".format(tpr[i]))
+        f.write("\n")
         f.close()
+
+
+def plot_roc(outfile_roc, i=1):
+    plt.figure(i)
+    with open(outfile_roc, 'rb') as f:
+        data = f.readlines()
+    
+    for i in range(len(data)/2):
+        fpr = np.genfromtxt([data[2*i].rstrip()])
+        tpr = np.genfromtxt([data[2*i+1].rstrip()])
+        plt.plot(fpr, tpr)
+
+    plt.title("Receiver Operating Characteristic")
+    plt.xlabel('False Positive Rate')
+    plt.ylabel('True Positive Rate')
+    plt.plot([0], [0], label=outfile_roc[:-4])
+    plt.legend()
+    plt.show()
 
 
 def main():
     parser = argparse.ArgumentParser(description="Run test cases on corels")
-    parser.add_argument("dataset", help="dataset to use (in ../data/)")
-    parser.add_argument("--val", help="perform cross validation", action="store_true", dest="val")
+    parser.add_argument("data_train", help="Training data (in ../data/)")
+    parser.add_argument("data_test", help="Test data (in ../data)")
+    parser.add_argument("--roc", help="Plot ROC curve", action="store_true", dest="roc")
+    #parser.add_argument("--val", help="perform cross validation", action="store_true", dest="val")
     parser.add_argument("-r", help="starting regularization", action="store", type=float, default=0.7515, dest="r_start")
     parser.add_argument("-b", help="breadth first search", action="store_true", dest="b")
     parser.add_argument("-c", help="best first search policy", type=int, choices=[1,2,3,4], action="store", dest="c")
@@ -89,12 +116,11 @@ def main():
     parser.add_argument("-n", help="maximum number of nodes (default 100000)", type=int, action="store", dest="max_num_nodes")
     args = parser.parse_args()
 
-    if args.val:
-        os.system("gcc -Wall -Wextra -L/usr/local/lib -lgmpxx -lgmp -DGMP -o cross-validate cross-validate.c rulelib.c")
-        sleep(2)
+    os.system("gcc -L/usr/local/lib -lgmpxx -lgmp -DGMP -o test test.c rulelib.c")
+    sleep(2)
     
     # Create filename
-    outfile = args.dataset
+    outfile = args.data_train
     if args.wpa:
         outfile += "_wpa"
     if args.falling:
@@ -105,18 +131,33 @@ def main():
         outfile += "_c{}".format(args.c)
     if args.p != None:
         outfile += "_p{}".format(args.p)
-    if args.r_start != parser.get_default('r_start'):
+    if args.r_start != parser.get_default('r_start') and args.step != None:
         outfile += "_r{}".format(args.r_start)
     if args.step != None:
         outfile += "_s{}".format(args.step)
     if args.max_num_nodes != None:
         outfile += "_n{}".format(args.max_num_nodes)
-    if args.val:
-        outfile += "_val"
+    if args.data_train != args.data_test:
+        outfile += "_val-{}".format(args.data_test)
+    # if args.roc:
+    outfile += "_roc"
     if args.text != None:
         outfile += "_{}".format(args.text)
 
     outfile += ".csv"
+
+    outfile_roc = outfile
+    outfile = outfile.replace("_roc", "")
+
+    if os.access(outfile_roc, os.F_OK):
+        c = raw_input("File {} already exists. Do you want to run again? (y/N/a) ".format(outfile_roc))
+        if c.lower() == "y":
+            os.unlink(outfile_roc)
+        elif c.lower() == "a":
+            pass
+        else:
+            plot_roc(outfile_roc)
+            sys.exit()
 
     if os.access(outfile, os.F_OK):
         c = raw_input("File {} already exists. Are you sure you want to continue? (y/N/a) ".format(outfile))
@@ -126,14 +167,16 @@ def main():
             pass
         else:
             sys.exit()
+
     
-    r = args.r_start
+    r = parser.get_default('r_start')
     if args.step != None and args.r_start != None:
         iter = int(args.r_start/args.step)
     else:
         iter = 200
     for i in range(iter):
-        run(r, outfile, args.dataset, args.falling, args.wpa, args.max_num_nodes, args.b, args.c, args.p, args.val)
+        if r <= args.r_start:
+            run(r, outfile, outfile_roc, args.data_train, args.data_test, args.falling, args.wpa, args.max_num_nodes, args.b, args.c, args.p)
             
         if args.step == None:
             r /= 1.0525
@@ -141,11 +184,14 @@ def main():
             r -= args.step
         
     while r > 0.0000001 and args.step != None:
-        run(r, outfile, args.dataset, args.falling, args.wpa, args.max_num_nodes, args.b, args.c, args.p, args.val)
+        run(r, outfile, outfile_roc, args.data_train, args.data_test, args.falling, args.wpa, args.max_num_nodes, args.b, args.c, args.p)
         r /= 1.0525
 
     #Run with zero regularity
-    run(0, outfile, args.dataset, args.falling, args.wpa, args.max_num_nodes, args.b, args.c, args.p, args.val)
+    run(0, outfile, outfile_roc, args.data_train, args.data_test, args.falling, args.wpa, args.max_num_nodes, args.b, args.c, args.p)
+
+    if args.roc:
+        plot_roc(outfile_roc)
     
     
 
