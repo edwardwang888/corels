@@ -49,7 +49,7 @@ def run(r, outfile, outfile_roc, data_train, data_test, falling, wpa, max_num_no
         rules = csvreader.next()
     
     # Generate test command string
-    cmd1 = ['./test']
+    cmd1 = ['./corels_test']
     cmd1.append("../data/{}.out".format(data_test))
     cmd1.append("../data/{}.label".format(data_test))
     for i in range(len(rules)-1):
@@ -75,26 +75,7 @@ def run(r, outfile, outfile_roc, data_train, data_test, falling, wpa, max_num_no
     roc.write_to_file(fpr, tpr, outfile_roc)
 
 
-def main():
-    parser = argparse.ArgumentParser(description="Run test cases on corels")
-    parser.add_argument("data_train", help="Training data (in ../data/)")
-    parser.add_argument("data_test", help="Test data (in ../data)")
-    parser.add_argument("--roc", help="Plot ROC curve", action="store_true", dest="roc")
-    parser.add_argument("-r", help="starting regularization", action="store", type=float, default=0.7515, dest="r_start")
-    parser.add_argument("-b", help="breadth first search", action="store_true", dest="b")
-    parser.add_argument("-c", help="best first search policy", type=int, choices=[1,2,3,4], action="store", dest="c")
-    parser.add_argument("-p", help="symmetry aware map", type=int, choices=[0,1,2], action="store", dest="p")
-    parser.add_argument("-d", help="use falling constraint", action="store_true", dest="falling")
-    parser.add_argument("-w", help="use WPA objective function", action="store_true", dest="wpa")
-    parser.add_argument("-W", help="add text to file name", action="store", dest="text")
-    parser.add_argument("-s", help="regularization step", action="store", type=float, dest="step")
-    parser.add_argument("-n", help="maximum number of nodes (default 100000)", type=int, action="store", dest="max_num_nodes")
-    args = parser.parse_args()
-
-    os.system("gcc -L/usr/local/lib -lgmpxx -lgmp -DGMP -o test test.c rulelib.c")
-    sleep(2)
-    
-    # Create filename
+def gen_filename_roc(args, parser, include_val=True):
     outfile = args.data_train
     if args.wpa:
         outfile += "_wpa"
@@ -112,7 +93,7 @@ def main():
         outfile += "_s{}".format(args.step)
     if args.max_num_nodes != None:
         outfile += "_n{}".format(args.max_num_nodes)
-    if args.data_train != args.data_test:
+    if include_val and args.data_train != args.data_test:
         outfile += "_val-{}".format(args.data_test)
     # if args.roc:
     outfile += "_roc"
@@ -120,11 +101,74 @@ def main():
         outfile += "_{}".format(args.text)
 
     outfile += ".csv"
+    return outfile
 
-    outfile_roc = outfile
-    outfile = outfile.replace("_roc", "")
 
-    if os.access(outfile_roc, os.F_OK):
+
+def parent_parser():
+    parser = argparse.ArgumentParser(add_help=False)
+    parser.add_argument("data_train", help="Training data (in ../data/)")
+    parser.add_argument("--roc", help="Plot ROC curve", action="store_true", dest="roc")
+    parser.add_argument("-r", help="starting regularization", action="store", type=float, default=0.7515, dest="r_start")
+    parser.add_argument("-b", help="breadth first search", action="store_true", dest="b")
+    parser.add_argument("-c", help="best first search policy", type=int, choices=[1,2,3,4], action="store", dest="c")
+    parser.add_argument("-p", help="symmetry aware map", type=int, choices=[0,1,2], action="store", dest="p")
+    parser.add_argument("-d", help="use falling constraint", action="store_true", dest="falling")
+    parser.add_argument("-w", help="use WPA objective function", action="store_true", dest="wpa")
+    parser.add_argument("-W", help="add text to file name", action="store", dest="text")
+    parser.add_argument("-s", help="regularization step", action="store", type=float, dest="step")
+    parser.add_argument("-n", help="maximum number of nodes (default 100000)", type=int, action="store", dest="max_num_nodes")
+    return parser
+
+def main():
+    parser = argparse.ArgumentParser(parents=[parent_parser()], description="Run test cases on corels")
+    parser.add_argument("data_test", help="Test data (in ../data)")
+    parser.add_argument("-o", help="override default output file names [outfile, outfile_roc]", action="store", nargs=2, dest="outfile")
+    parser.add_argument("--append", help="append to file", action="store_true", dest="append")
+    args = parser.parse_args()
+
+    if args.data_test == None:
+        args.data_test = args.data_train
+
+    os.system("make")
+    os.system("gcc -L/usr/local/lib -lgmpxx -lgmp -DGMP -o corels_test corels_test.c rulelib.c")
+    sleep(2)
+    
+    # Create filename
+    if args.outfile != None:
+        outfile = args.outfile[0]
+        outfile_roc = args.outfile[1]
+    else:
+        # outfile = args.data_train
+        # if args.wpa:
+        #     outfile += "_wpa"
+        # if args.falling:
+        #     outfile += "_falling"
+        # if args.b:
+        #     outfile += "_b"
+        # if args.c != None:
+        #     outfile += "_c{}".format(args.c)
+        # if args.p != None:
+        #     outfile += "_p{}".format(args.p)
+        # if args.r_start != parser.get_default('r_start') and args.step != None:
+        #     outfile += "_r{}".format(args.r_start)
+        # if args.step != None:
+        #     outfile += "_s{}".format(args.step)
+        # if args.max_num_nodes != None:
+        #     outfile += "_n{}".format(args.max_num_nodes)
+        # if args.data_train != args.data_test:
+        #     outfile += "_val-{}".format(args.data_test)
+        # # if args.roc:
+        # outfile += "_roc"
+        # if args.text != None:
+        #     outfile += "_{}".format(args.text)
+
+        # outfile += ".csv"
+
+        outfile_roc = gen_filename_roc(args, parser)
+        outfile = outfile_roc.replace("_roc", "")
+
+    if os.access(outfile_roc, os.F_OK) and args.append == False:
         c = raw_input("File {} already exists. Do you want to run again? (y/N/a) ".format(outfile_roc))
         if c.lower() == "y":
             os.unlink(outfile_roc)
@@ -135,7 +179,7 @@ def main():
             roc.show()
             sys.exit()
 
-    if os.access(outfile, os.F_OK):
+    if os.access(outfile, os.F_OK) and args.append == False:
         c = raw_input("File {} already exists. Are you sure you want to continue? (y/N/a) ".format(outfile))
         if c.lower() == "y":
             os.unlink(outfile)
