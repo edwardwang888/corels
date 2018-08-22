@@ -31,7 +31,7 @@ int main(int argc, char *argv[])
     double wpa = 0;
     for (int i = 0; i < nsamples; i++) {
         for (int j = 0; j < i; j++) {
-            wpa -= (z[i] > z[j]) * (y[i] > y[j]);
+            wpa -= (((z[i] >= z[j]) - 0.5 * (z[i] == z[j])) * (y[i] > y[j]));
             if (z[i] < z[j] && y[i] < y[j])
                 wpa -= 1;
         }
