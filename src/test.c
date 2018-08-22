@@ -31,7 +31,6 @@ int main(int argc, char *argv[])
     int rulelist_cnt = argc - optind - 2;
     int ruleindex[rulelist_cnt];
     char **rulelist = &argv[optind+2];
-    //printf("%d ", rulelist_cnt);
 
     // Find the rules in the rule list
     for (int i = 0; i < rulelist_cnt; i++) {
@@ -61,14 +60,19 @@ int main(int argc, char *argv[])
         proportion = (double)num_ones/ncaptured;
         update_scores(scores, nsamples, captured, wpa, i, proportion);
     }
-    
+
     // Calculate objective
     double wpa_max = labels[0].support * labels[1].support;
     double wpa_objective = 0;
     for (int i = 0; i < nsamples; i++)
         for (int j = 0; j < nsamples; j++)
-            wpa_objective -= (scores[i] > scores[j]) * (rule_isset(labels[1].truthtable, i) > (rule_isset(labels[1].truthtable, j)));
+            wpa_objective -= ((scores[i] >= scores[j]) - 0.5 * (scores[i] == scores[j])) * (rule_isset(labels[1].truthtable, i) > (rule_isset(labels[1].truthtable, j)));
     
+    // Print objective
     wpa_objective = wpa_objective/wpa_max + 1;
-    printf("%f", wpa_objective);
+    printf("%f\n", wpa_objective);
+
+    // Print scores
+    for (int i = 0; i < nsamples; i++)
+        printf("%f ", scores[i]);
 }
