@@ -58,8 +58,8 @@ void evaluate_children(CacheTree* tree, Node* parent, tracking_vector<unsigned s
     parent_equivalent_minority = parent->equivalent_minority();
     double t0 = timestamp();
 
-    //int total_zeros = tree->label(0).support;
-    //int total_ones = nsamples - total_zeros;
+    int total_zeros = tree->label(0).support;
+    int total_ones = nsamples - total_zeros;
 
 
     // nrules is actually the number of rules + 1 (since it includes the default rule), so the maximum
@@ -109,8 +109,8 @@ void evaluate_children(CacheTree* tree, Node* parent, tracking_vector<unsigned s
             objective = lower_bound + (double)(num_not_captured - default_correct) / nsamples;
 
             //printf("parent->objective(): %f\n", parent->objective());
-            if (tree->wpa())
-                objective = parent->objective() - c1 * d0 + c; 
+            // if (tree->wpa())
+            //     objective = parent->objective() - c1 * d0 + c * total_ones * total_zeros; 
             logger->addToObjTime(time_diff(t2));
             logger->incObjNum();
             // Should falling constraint go here too?
@@ -225,7 +225,7 @@ void evaluate_children(CacheTree* tree, Node* parent, tracking_vector<unsigned s
 
             //printf("parent->objective(): %f\n", parent->objective());
             if (tree->wpa())
-                objective = parent->objective() - c1 * d0 + c; 
+                objective = parent->objective() - c1 * d0 + c * total_ones * total_zeros;
             logger->addToObjTime(time_diff(t2));
             logger->incObjNum();
             // Should falling constraint go here too?

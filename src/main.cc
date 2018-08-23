@@ -266,10 +266,13 @@ int main(int argc, char *argv[]) {
     // printf("\n");
     
     // Calculate WPA objective
-    double wpa_objective = labels[0].support * labels[1].support;
+    double wpa_max = labels[0].support * labels[1].support;
+    double wpa_objective = 0;
     for (int i = 0; i < nsamples; i++)
         for (int j = 0; j < nsamples; j++)
             wpa_objective -= (scores[i] > scores[j]) * (rule_isset(labels[1].truthtable, i) > (rule_isset(labels[1].truthtable, j)));
+    
+    wpa_objective = wpa_objective/wpa_max + 1;
     
     // Override objective with WPA
     double obj_error = wpa_objective - tree->min_objective();
