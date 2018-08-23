@@ -12,31 +12,10 @@ import csv
 import subprocess
 import os
 import sys
+from time import sleep
+from utils import check_outfile, check_outfile_roc
 
 plot_i = 1
-
-def check_outfile(outfile):
-    if os.access(outfile, os.F_OK):
-        c = raw_input("File {} already exists. Are you sure you want to continue? (y/N/a) ".format(outfile))
-        if c.lower() == "y":
-            os.unlink(outfile)
-        elif c.lower() == "a":
-            pass
-        else:
-            sys.exit()
-
-def check_outfile_roc(outfile_roc):
-    if os.access(outfile_roc, os.F_OK):
-        c = raw_input("File {} already exists. Do you want to run again? (y/N/a) ".format(outfile_roc))
-        if c.lower() == "y":
-            os.unlink(outfile_roc)
-            return False
-        elif c.lower() == "a":
-            return False
-        else:
-            return True
-    
-    return False
 
 def plot_roc(outfile_roc):
     global plot_i
@@ -87,7 +66,7 @@ def run_corels(args, parser):
     ## Check if outfile exists
     final_outfile = corels_test.gen_filename_roc(args, parser, include_val=False).replace("_roc", "_cross-{}".format(args.num_groups))
     final_outfile_roc = final_outfile.replace(".csv", "_roc.csv")
-    if check_outfile_roc(final_outfile_roc) and args.roc:
+    if check_outfile_roc(final_outfile_roc) == "n" and args.roc:
         plot_roc(final_outfile_roc)
         return
 
@@ -161,6 +140,10 @@ def run_corels(args, parser):
         plot_roc(final_outfile_roc)
 
 
+def get_scores_file(args, name, i):
+    return "../data/{}_{}_scores_cross-{}_i-{}.csv".format(args.data_train, name, args.num_groups, i)
+
+
 def run_baseline(args, parser, name):
     ## Check if outfile exists
     final_outfile = args.data_train + "_{}".format(name)
@@ -169,11 +152,18 @@ def run_baseline(args, parser, name):
     
     final_outfile += "_cross-{}.csv".format(args.num_groups)
     final_outfile_roc = final_outfile.replace(".csv", "_roc.csv")
-    if check_outfile_roc(final_outfile_roc) and args.roc:
+    if check_outfile_roc(final_outfile_roc) == "n" and args.roc:
         plot_roc(final_outfile_roc)
         return
     
     check_outfile(final_outfile)
+    outfile_scores = get_scores_file(args, name, 0)
+    if check_outfile_roc(outfile_scores) == "y":
+        for i in range(1, args.num_groups):
+            outfile_scores = get_scores_file(args, name, i)
+            if os.access(outfile_scores, os.F_OK):
+                print("Also deleting {}".format(outfile_scores))
+                os.unlink(outfile_scores)
 
     ## Read data
     data, labels = baseline.get_data(args.data_train, args.binary)
@@ -194,7 +184,8 @@ def run_baseline(args, parser, name):
         y_test = labels[test_rows]
 
         outfile_roc = tempfile.NamedTemporaryFile(dir="../data", suffix="_{}_roc.csv".format(name))
-        baseline.run(X_train, y_train, X_test, y_test, outfile.name, outfile_roc.name, args, append=True)
+        outfile_scores = get_scores_file(args, name, i)
+        baseline.run(X_train, y_train, X_test, y_test, outfile.name, outfile_roc.name, args, append=True, outfile_scores=outfile_scores)
         fpr, tpr = roc.find_max_roc(outfile_roc.name)
         roc.write_to_file(fpr, tpr, final_outfile_roc)
         outfile_roc.close()
@@ -208,6 +199,8 @@ def run_baseline(args, parser, name):
         plot_roc(final_outfile_roc)
 
 def run_baseline_main(args, parser):
+    os.system("make baseline")
+    sleep(2)
     if args.logistic:
         run_baseline(args, parser, "logistic")
     if args.rforest:

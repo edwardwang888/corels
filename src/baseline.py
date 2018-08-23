@@ -11,9 +11,10 @@ import subprocess
 from sklearn import metrics
 import matplotlib.pyplot as plt
 import roc
+from utils import check_outfile, check_outfile_roc
 
-def run(X_train, y_train, X_test, y_test, outfile, outfile_roc, args, append=False):
-      if os.access(outfile_roc, os.F_OK) and args.roc == True and append == False:
+def run(X_train, y_train, X_test, y_test, outfile, outfile_roc, args, append=False, outfile_scores=None):
+      """ if os.access(outfile_roc, os.F_OK) and args.roc == True and append == False:
             c = raw_input("File {} already exists. Do you want to run again? (y/N/a) ".format(outfile))
             if c.lower() == "y":
                   os.unlink(outfile)
@@ -29,7 +30,21 @@ def run(X_train, y_train, X_test, y_test, outfile, outfile_roc, args, append=Fal
             elif c.lower() == "a":
                   pass
             else:
-                  return
+                  return """
+
+      if args.roc == True and append == False and check_outfile_roc(outfile_roc):
+            return
+
+      if args.roc == False and append == False and check_outfile(outfile):
+            return
+      
+      nsamples = len(X_test)
+      iter = 140
+      run = True
+      scores_all = np.ndarray(shape=(iter, nsamples))
+      if os.access(outfile_scores, os.F_OK):
+            scores_all = np.genfromtxt(outfile_scores, delimiter=',')
+            run = False
 
       if "logistic" not in outfile and "rforest" not in outfile and "frl" not in outfile:
             print("Invalid classfier")
@@ -40,23 +55,28 @@ def run(X_train, y_train, X_test, y_test, outfile, outfile_roc, args, append=Fal
       else:
             print("\nModel: {}".format(outfile[:-4]))
 
-      nsamples = len(X_test)
       r = args.r_start
       n1 = np.sum(y_test)
-      for i in range(140):
+      for i in range(iter):
             if r <= args.r_start:
-                  if "logistic" in outfile:
-                        clf = linear_model.LogisticRegression(C=1/r)
-                  elif "rforest" in outfile:
-                        clf = RandomForestClassifier(n_estimators=int(1/r), n_jobs=2)
-                  elif "frl" in outfile:
-                        clf = sklearn_wrappers.monotonic_sklearn_fitter(num_steps = int(1/r), min_supp = 5, max_clauses = 2, prior_length_mean = 8, prior_gamma_l_alpha = 1., prior_gamma_l_beta = 0.1, temperature = 1)
-                  
-                  predictor = clf.fit(X_train, y_train)
-                  if "frl" not in outfile:
-                        scores = clf.predict_proba(X_test)[:,1]
+                  if run:
+                        if "logistic" in outfile:
+                              clf = linear_model.LogisticRegression(C=1/r)
+                        elif "rforest" in outfile:
+                              clf = RandomForestClassifier(n_estimators=int(1/r), n_jobs=2)
+                        elif "frl" in outfile:
+                              clf = sklearn_wrappers.monotonic_sklearn_fitter(num_steps = int(1/r), min_supp = 5, max_clauses = 2, prior_length_mean = 8, prior_gamma_l_alpha = 1., prior_gamma_l_beta = 0.1, temperature = 1)
+                        
+                        predictor = clf.fit(X_train, y_train)
+                        if "frl" not in outfile:
+                              scores = clf.predict_proba(X_test)[:,1]
+                        else:
+                              scores = predictor.decision_function(X_test)
+
+                        scores_all[i,:] = scores
+
                   else:
-                        scores = predictor.decision_function(X_test)
+                        scores = scores_all[i,:]
 
                   # Calculate objective
                   initial_obj = n1 * (nsamples - n1)
@@ -74,6 +94,9 @@ def run(X_train, y_train, X_test, y_test, outfile, outfile_roc, args, append=Fal
                   roc.write_to_file(fpr, tpr, outfile_roc)
                         
             r /= 1.0525
+
+      if run:
+            np.savetxt(outfile_scores, scores_all, delimiter=',')
 
 def get_data(dataset, binary):
       if binary:
@@ -117,7 +140,7 @@ def main():
             print("No classifier specified")
             sys.exit(1)
 
-      os.system("gcc -Wall -Wextra -o baseline baseline.c")
+      os.system("make baseline")
 
       X_train, y_train = get_data(args.data_train, args.binary)
       X_test, y_test = get_data(args.data_test, args.binary)
