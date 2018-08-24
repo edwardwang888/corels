@@ -2,11 +2,12 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+#include "wpa_objective.h"
 
 void update_scores(double *scores, int nsamples, VECTOR captured, int wpa, int ruleindex, double proportion)
 {
     for (int i = 0; i < nsamples; i++) {
-        if (rule_isset(captured, i)) {
+        if (rule_isset(captured, nsamples-i-1)) {
             if (wpa)
                 *(scores+i) = -1 * ruleindex;
             else
@@ -54,23 +55,29 @@ int main(int argc, char *argv[])
     for (int i = 0; i < rulelist_cnt; i++) {
         rule_t curr_rule = rules[ruleindex[i]];
         rule_vandnot(captured, curr_rule.truthtable, total_captured, nsamples, &ncaptured);
-        rule_vor(total_captured, curr_rule.truthtable, total_captured, nsamples, &total_ncaptured);
+        rule_vor(total_captured, captured, total_captured, nsamples, &total_ncaptured);
         // Count number of 1's
         rule_vand(ones, captured, ones_label.truthtable, nsamples, &num_ones);
         proportion = (double)num_ones/ncaptured;
         update_scores(scores, nsamples, captured, wpa, i, proportion);
     }
+    /** Default rule **/
+    rule_not(captured, total_captured, nsamples, &ncaptured);
+    ncaptured = nsamples - total_ncaptured; // rule_not() does not handle two's complement
+    // Count number of 1's
+    rule_vand(ones, captured, ones_label.truthtable, nsamples, &num_ones);
+    proportion = (double)num_ones/ncaptured;
+    update_scores(scores, nsamples, captured, wpa, rulelist_cnt, proportion);
+
+    // Make copy of labels
+    int labels_int[nsamples];
+    for (int i = 0; i < nsamples; i++)
+        labels_int[i] = (rule_isset(labels[1].truthtable, nsamples-i-1) != 0);
 
     // Calculate objective
-    double wpa_max = labels[0].support * labels[1].support;
-    double wpa_objective = 0;
-    for (int i = 0; i < nsamples; i++)
-        for (int j = 0; j < nsamples; j++)
-            wpa_objective -= ((scores[i] >= scores[j]) - 0.5 * (scores[i] == scores[j])) * (rule_isset(labels[1].truthtable, i) > (rule_isset(labels[1].truthtable, j)));
-    
-    // Print objective
-    wpa_objective = wpa_objective/wpa_max + 1;
-    printf("%f\n", wpa_objective);
+    int wpa_max = labels[0].support * labels[1].support;
+    double wpa_obj = wpa_objective(scores, labels_int, wpa_max, nsamples);
+    printf("%f\n", wpa_obj);
 
     // Print scores
     for (int i = 0; i < nsamples; i++)
