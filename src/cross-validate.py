@@ -67,6 +67,7 @@ def run_corels(args, parser):
     final_outfile = corels_test.gen_filename_roc(args, parser, include_val=False).replace("_roc", "_cross-{}".format(args.num_groups))
     final_outfile_roc = final_outfile.replace(".csv", "_roc.csv")
     if check_outfile_roc(final_outfile_roc) == "n" and args.roc:
+        print("Outfile: {}".format(final_outfile))
         plot_roc(final_outfile_roc)
         return
 
@@ -78,24 +79,33 @@ def run_corels(args, parser):
     nsamples = data.shape[1] - 1
     size = nsamples/args.num_groups
 
-    ## Create temporary files
-    X_train = tempfile.NamedTemporaryFile(dir="../data", suffix=".out")
-    X_test = tempfile.NamedTemporaryFile(dir="../data", suffix=".out")
-    
-    y_train = tempfile.NamedTemporaryFile(dir="../data")
-    os.unlink(y_train.name)
-    y_train.name = X_train.name.replace(".out", ".label")
-    
-    y_test = tempfile.NamedTemporaryFile(dir="../data")
-    os.unlink(y_test.name)
-    y_test.name = X_test.name.replace(".out", ".label")
-    
     outfile = tempfile.NamedTemporaryFile(dir="../data", suffix=".csv")
 
     ## Run cross validation
     for i in range(args.num_groups):
         print(i)
         outfile_roc = tempfile.NamedTemporaryFile(dir="../data", suffix="_roc.csv")
+
+        X_train = tempfile.NamedTemporaryFile(dir="../data", suffix=".out")
+        os.unlink(X_train.name)
+        X_train.name = "../data/{}".format(args.data_train)
+        if args.wpa:
+            X_train.name += "_wpa"
+        if args.falling:
+            X_train.name += "_falling"
+
+        X_train.name += "-cross-{}_i-{}.out".format(args.num_groups, i)
+        
+        X_test = tempfile.NamedTemporaryFile(dir="../data", suffix=".out")
+        
+        y_train = tempfile.NamedTemporaryFile(dir="../data")
+        os.unlink(y_train.name)
+        y_train.name = X_train.name.replace(".out", ".label")
+        
+        y_test = tempfile.NamedTemporaryFile(dir="../data")
+        os.unlink(y_test.name)
+        y_test.name = X_test.name.replace(".out", ".label")
+
         test_cols = [0] + range(i*size + 1, (i+1)*size + 1)
         train_cols = range(0, i*size + 1) + range((i+1)*size + 1, data.shape[1])
 
@@ -141,7 +151,11 @@ def run_corels(args, parser):
 
 
 def get_scores_file(args, name, i):
-    return "../data/{}_{}_scores_cross-{}_i-{}.csv".format(args.data_train, name, args.num_groups, i)
+    outfile_scores = "../data/{}_{}_scores_cross-{}_i-{}.csv".format(args.data_train, name, args.num_groups, i)
+    if args.binary:
+        outfile_scores = outfile_scores.replace(".csv", "_binary.csv")
+
+    return outfile_scores
 
 
 def run_baseline(args, parser, name):
@@ -153,17 +167,18 @@ def run_baseline(args, parser, name):
     final_outfile += "_cross-{}.csv".format(args.num_groups)
     final_outfile_roc = final_outfile.replace(".csv", "_roc.csv")
     if check_outfile_roc(final_outfile_roc) == "n" and args.roc:
+        print("Outfile: {}".format(final_outfile))
         plot_roc(final_outfile_roc)
         return
     
     check_outfile(final_outfile)
     outfile_scores = get_scores_file(args, name, 0)
-    if check_outfile_roc(outfile_scores) == "y":
+    """ if check_outfile_roc(outfile_scores) == "y":
         for i in range(1, args.num_groups):
             outfile_scores = get_scores_file(args, name, i)
             if os.access(outfile_scores, os.F_OK):
                 print("Also deleting {}".format(outfile_scores))
-                os.unlink(outfile_scores)
+                os.unlink(outfile_scores) """
 
     ## Read data
     data, labels = baseline.get_data(args.data_train, args.binary)
