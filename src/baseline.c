@@ -5,6 +5,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <string.h>
+#include "wpa_objective.h"
 
 int main(int argc, char *argv[])
 {
@@ -27,7 +28,7 @@ int main(int argc, char *argv[])
     for (int i = 0; i < nsamples; i++)
         printf("%d ", y[i]);
  */
-
+/* 
     double wpa = 0;
     for (int i = 0; i < nsamples; i++) {
         for (int j = 0; j < i; j++) {
@@ -37,7 +38,9 @@ int main(int argc, char *argv[])
         }
     }
     wpa = wpa/wpa_max + 1;
+ */
 
+    double wpa = wpa_objective(z, y, wpa_max, nsamples);
     char output[200];
     sprintf(output, "%f %f\n", c, wpa);
     printf("%s", output);
