@@ -11,7 +11,7 @@ import subprocess
 from sklearn import metrics
 import matplotlib.pyplot as plt
 import roc
-from utils import check_outfile, check_outfile_roc
+from utils import check_outfile, check_outfile_roc, wpa_objective
 
 def run(X_train, y_train, X_test, y_test, outfile, outfile_roc, args, append=False, outfile_scores=None):
       """ if os.access(outfile_roc, os.F_OK) and args.roc == True and append == False:
@@ -92,6 +92,9 @@ def run(X_train, y_train, X_test, y_test, outfile, outfile_roc, args, append=Fal
                   # Calculate ROC
                   fpr, tpr, thresholds = metrics.roc_curve(y_test, scores)
                   roc.write_to_file(fpr, tpr, outfile_roc)
+
+                  # Objective sanity check
+                  # print("{}\n".format(wpa_objective(scores, y_test)))
                         
             r /= 1.0525
 
@@ -121,7 +124,7 @@ def get_data(dataset, binary):
 def parent_parser():
       parser = argparse.ArgumentParser(add_help=False)
       parser.add_argument("data_train", help="Training data (in ../data/)")
-      parser.add_argument("--bin", help="Use binary csv", action="store_true", dest="binary")
+      parser.add_argument("--no-bin", help="Don't use binary csv", action="store_false", dest="binary")
       parser.add_argument("--log", help="Run logistic regression", action="store_true", dest="logistic")
       parser.add_argument("--rf", help="Run random forests classifier", action="store_true", dest="rforest")
       parser.add_argument("--frl", help="Run falling rule lists classifier", action="store_true", dest="frl")

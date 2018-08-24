@@ -1,5 +1,6 @@
 import os
 import sys
+import numpy as np
 
 def check_outfile(outfile):
     if os.access(outfile, os.F_OK):
@@ -23,3 +24,14 @@ def check_outfile_roc(outfile_roc):
             return "a"
         else:
             return "n"
+
+def wpa_objective(z, y):
+    wpa = 0
+    nsamples = y.shape[0]
+    for i in range(nsamples):
+        for j in range(nsamples):
+            wpa += (int(z[i] >= z[j]) - 0.5 * int(z[i] == z[j])) * int(y[i] > y[j])
+    
+    n1 = np.sum(y)
+    wpa_max = n1 * (nsamples - n1)
+    return wpa/wpa_max

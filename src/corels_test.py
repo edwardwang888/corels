@@ -9,6 +9,7 @@ import numpy as np
 from sklearn import metrics
 import matplotlib.pyplot as plt
 import roc
+from utils import wpa_objective
 
 
 def run(r, outfile, outfile_roc, data_train, data_test, falling, wpa, max_num_nodes, b, c, p):
@@ -50,6 +51,8 @@ def run(r, outfile, outfile_roc, data_train, data_test, falling, wpa, max_num_no
     
     # Generate test command string
     cmd1 = ['./corels_test']
+    if wpa:
+        cmd1.append("-w")
     cmd1.append("../data/{}.out".format(data_test))
     cmd1.append("../data/{}.label".format(data_test))
     for i in range(len(rules)-1):
@@ -63,7 +66,6 @@ def run(r, outfile, outfile_roc, data_train, data_test, falling, wpa, max_num_no
     objective = stdout[:stdout.find('\n')]
     output = "{} {}".format(r, objective)
     print(cmd1)
-    print(output + "\n")
     f = open(outfile, 'ab')
     f.write(output + "\n")
     f.close()
@@ -73,6 +75,12 @@ def run(r, outfile, outfile_roc, data_train, data_test, falling, wpa, max_num_no
     scores = np.genfromtxt([stdout[stdout.find('\n'):]], delimiter=' ')
     fpr, tpr, thresholds = metrics.roc_curve(y_test, scores)
     roc.write_to_file(fpr, tpr, outfile_roc)
+
+    print(scores)
+    print(output + "\n")
+
+    # Objective sanity check
+    # print(wpa_objective(scores, y_test))
 
 
 def gen_filename_roc(args, parser, include_val=True):
@@ -131,7 +139,7 @@ def main():
         args.data_test = args.data_train
 
     os.system("make")
-    os.system("gcc -L/usr/local/lib -lgmpxx -lgmp -DGMP -o corels_test corels_test.c rulelib.c")
+    os.system("make corels_test")
     sleep(2)
     
     # Create filename
