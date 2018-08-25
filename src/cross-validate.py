@@ -93,6 +93,8 @@ def run_corels(args, parser):
             X_train.name += "_wpa"
         if args.falling:
             X_train.name += "_falling"
+        if args.ties:
+            X_train.name += "_t-{}".format(args.ties)
 
         X_train.name += "-cross-{}_i-{}.out".format(args.num_groups, i)
         
@@ -131,6 +133,8 @@ def run_corels(args, parser):
             cmd += ['-s', args.step]
         if args.max_num_nodes != None:
             cmd += ['-n', args.max_num_nodes]
+        if args.ties != None:
+            cmd += ['-t', "{}".format(args.ties)]
 
         cmd += ['-o', outfile.name, outfile_roc.name, '--append', os.path.basename(X_train.name).replace(".out", ""), os.path.basename(X_test.name).replace(".out", "")]
         

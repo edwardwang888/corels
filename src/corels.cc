@@ -35,7 +35,7 @@ int compare_doubles(const void *a, const void *b)
  * parent -- the node that is going to have all of its children evaluated.
  * parent_not_captured -- the vector representing data points NOT captured by the parent.
  */
-void evaluate_children(CacheTree* tree, Node* parent, tracking_vector<unsigned short, DataStruct::Tree> parent_prefix, VECTOR parent_not_captured, Queue* q, PermutationMap* p, bool falling, bool show_proportion, bool change_search_path) {
+void evaluate_children(CacheTree* tree, Node* parent, tracking_vector<unsigned short, DataStruct::Tree> parent_prefix, VECTOR parent_not_captured, Queue* q, PermutationMap* p, bool falling, bool show_proportion, bool change_search_path, double ties) {
     VECTOR captured, captured_zeros, not_captured, not_captured_zeros, not_captured_equivalent;
     int num_captured, c0, c1, captured_correct;
     int num_not_captured, d0, d1, default_correct, num_not_captured_equivalent;
@@ -224,8 +224,10 @@ void evaluate_children(CacheTree* tree, Node* parent, tracking_vector<unsigned s
             objective = lower_bound + (double)(num_not_captured - default_correct) / nsamples;
 
             //printf("parent->objective(): %f\n", parent->objective());
-            if (tree->wpa())
-                objective = parent->objective() - c1 * d0 + c * total_ones * total_zeros;
+            if (tree->wpa()) {
+                int support = tree->rule(i).support;
+                objective = parent->objective() - c1 * d0 - ties * nsamples * num_captured + c * total_ones * total_zeros;
+            }
             logger->addToObjTime(time_diff(t2));
             logger->incObjNum();
             // Should falling constraint go here too?
@@ -263,7 +265,8 @@ void evaluate_children(CacheTree* tree, Node* parent, tracking_vector<unsigned s
                 int r0;
                 rule_vand(parent_not_captured_zeroes, parent_not_captured, tree->label(0).truthtable, nsamples, &r0);
                 int r1 = num_parent_not_captured - r0;
-                lookahead_bound = parent->objective() - r1 * r0 + c;
+                int support = tree->rule(i).support;
+                lookahead_bound = parent->objective() - r1 * r0 - ties * nsamples * num_captured + c;
             }
             lb_array[i] = lookahead_bound;
             // only add node to our datastructures if its children will be viable
@@ -324,10 +327,10 @@ void evaluate_children(CacheTree* tree, Node* parent, tracking_vector<unsigned s
  */
 int bbound(CacheTree* tree, size_t max_num_nodes, Queue* q, PermutationMap* p)
 {
-    return bbound(tree, max_num_nodes, q, p, false, false, false);
+    return bbound(tree, max_num_nodes, q, p, false, false, false, 0);
 }
 
-int bbound(CacheTree* tree, size_t max_num_nodes, Queue* q, PermutationMap* p, bool falling, bool show_proportion, bool change_search_path) {
+int bbound(CacheTree* tree, size_t max_num_nodes, Queue* q, PermutationMap* p, bool falling, bool show_proportion, bool change_search_path, double ties) {
     size_t num_iter = 0;
     int cnt;
     double min_objective;
@@ -367,7 +370,7 @@ int bbound(CacheTree* tree, size_t max_num_nodes, Queue* q, PermutationMap* p, b
             rule_vandnot(not_captured,
                          tree->rule(0).truthtable, captured,
                          tree->nsamples(), &cnt);
-            evaluate_children(tree, node_ordered.first, node_ordered.second, not_captured, q, p, falling, show_proportion, change_search_path);
+            evaluate_children(tree, node_ordered.first, node_ordered.second, not_captured, q, p, falling, show_proportion, change_search_path, ties);
             logger->addToEvalChildrenTime(time_diff(t1));
             logger->incEvalChildrenNum();
             

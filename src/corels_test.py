@@ -12,7 +12,7 @@ import roc
 from utils import wpa_objective
 
 
-def run(r, outfile, outfile_roc, data_train, data_test, falling, wpa, max_num_nodes, b, c, p):
+def run(r, outfile, outfile_roc, data_train, data_test, falling, wpa, max_num_nodes, b, c, p, ties):
     data_minor = "../data/{}.minor".format(data_train)
     #Start assembling command string
     cmd = "./corels -r {} ".format(r)
@@ -28,6 +28,8 @@ def run(r, outfile, outfile_roc, data_train, data_test, falling, wpa, max_num_no
         cmd = cmd + '-w '
     if max_num_nodes != None:
         cmd += "-n {} ".format(max_num_nodes)
+    if ties != None:
+        cmd += "-t {} ".format(ties)
     if os.access(data_minor, os.F_OK) == False:
         cmd = cmd + "../data/{0}.out ../data/{0}.label".format(data_train)
     else:
@@ -101,6 +103,8 @@ def gen_filename_roc(args, parser, include_val=True):
         outfile += "_s{}".format(args.step)
     if args.max_num_nodes != None:
         outfile += "_n{}".format(args.max_num_nodes)
+    if args.ties != None:
+        outfile += "_t-{}".format(args.ties)
     if include_val and args.data_train != args.data_test:
         outfile += "_val-{}".format(args.data_test)
     # if args.roc:
@@ -126,6 +130,7 @@ def parent_parser():
     parser.add_argument("-W", help="add text to file name", action="store", dest="text")
     parser.add_argument("-s", help="regularization step", action="store", type=float, dest="step")
     parser.add_argument("-n", help="maximum number of nodes (default 100000)", type=int, action="store", dest="max_num_nodes")
+    parser.add_argument("-t", help="optimize with ties", type=float, action="store", dest="ties")
     return parser
 
 def main():
@@ -204,7 +209,7 @@ def main():
         iter = 200
     for i in range(iter):
         if r <= args.r_start:
-            run(r, outfile, outfile_roc, args.data_train, args.data_test, args.falling, args.wpa, args.max_num_nodes, args.b, args.c, args.p)
+            run(r, outfile, outfile_roc, args.data_train, args.data_test, args.falling, args.wpa, args.max_num_nodes, args.b, args.c, args.p, args.ties)
             
         if args.step == None:
             r /= 1.0525
@@ -212,11 +217,11 @@ def main():
             r -= args.step
         
     while r > 0.0000001 and args.step != None:
-        run(r, outfile, outfile_roc, args.data_train, args.data_test, args.falling, args.wpa, args.max_num_nodes, args.b, args.c, args.p)
+        run(r, outfile, outfile_roc, args.data_train, args.data_test, args.falling, args.wpa, args.max_num_nodes, args.b, args.c, args.p, args.ties)
         r /= 1.0525
 
     #Run with zero regularity
-    run(0, outfile, outfile_roc, args.data_train, args.data_test, args.falling, args.wpa, args.max_num_nodes, args.b, args.c, args.p)
+    run(0, outfile, outfile_roc, args.data_train, args.data_test, args.falling, args.wpa, args.max_num_nodes, args.b, args.c, args.p, args.ties)
 
     if args.roc:
         roc.plot(outfile_roc)
