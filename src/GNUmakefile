@@ -84,6 +84,12 @@ clean:
 test: test.c
 	gcc -Wall -Wextra -o test test.c
 
+corels_test: corels_test.c rulelib.c wpa_objective.h
+	gcc -L/usr/local/lib -lgmpxx -lgmp -DGMP -o corels_test corels_test.c rulelib.c
+
+baseline: baseline.c wpa_objective.h
+	gcc -Wall -Wextra -o baseline baseline.c
+
 DEPFILES := $(wildcard $(DEPSDIR)/*.d)
 ifneq ($(DEPFILES),)
 include $(DEPFILES)
