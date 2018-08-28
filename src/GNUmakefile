@@ -49,7 +49,7 @@ libcorels.a: run.o params.o corels.o pmap.o cache.o rulelib.o utils.o
 evaluate-test: evaluate-test.o evaluate.o params.o run.o corels.o pmap.o cache.o rulelib.o utils.o
 	$(CXX) $(CXXFLAGS) $^ -o $@ $(LDFLAGS) $(LIBS)
 
-main.o: main.cc $(DEPSDIR)/stamp
+main.o: main.cc wpa_objective.h $(DEPSDIR)/stamp
 	$(CXX) $(CXXFLAGS) $(DEPCFLAGS) -c $< -o $@
 
 corels.o: corels.cc $(DEPSDIR)/stamp

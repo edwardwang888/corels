@@ -40,8 +40,9 @@ def run(r, outfile, outfile_roc, data_train, data_test, falling, wpa, max_num_no
     # Execute CORELS on training data
     print(cmd)
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-    stdout = p.communicate()[0]
+    stdout, stderr = p.communicate()
     print(stdout)
+    print("corels.c: " + stderr)
 
     # Read in rule list from log file
     if p.poll() != 0:
@@ -64,8 +65,10 @@ def run(r, outfile, outfile_roc, data_train, data_test, falling, wpa, max_num_no
         cmd1.append(rules[i][:rules[i].find('~')])
 
     # Calculate objective and ROC
-    p = subprocess.Popen(cmd1, stdout=subprocess.PIPE)
-    stdout = p.communicate()[0]
+    p = subprocess.Popen(cmd1, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    stdout, stderr = p.communicate()
+
+    print("corels_test.c: " + stderr)
 
     objective = stdout[:stdout.find('\n')]
     output = "{} {}".format(r, objective)

@@ -8,6 +8,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <errno.h>
+#include "wpa_objective.h"
 
 #define BUFSZ 512
 
@@ -280,24 +281,66 @@ int main(int argc, char *argv[]) {
     
     // Calculate WPA objective
     double wpa_max = labels[0].support * labels[1].support;
-    double wpa_objective = 0;
+    double wpa_obj = 0;
     for (int i = 0; i < nsamples; i++)
         for (int j = 0; j < nsamples; j++)
-            wpa_objective -= (scores[i] > scores[j]) * (rule_isset(labels[1].truthtable, i) > (rule_isset(labels[1].truthtable, j)));
+            wpa_obj -= (scores[i] > scores[j]) * (rule_isset(labels[1].truthtable, i) > (rule_isset(labels[1].truthtable, j)));
     
-    wpa_objective = wpa_objective/wpa_max + 1;
+    wpa_obj = wpa_obj/wpa_max + 1;
     
     // Override objective with WPA
-    double obj_error = wpa_objective - tree->min_objective();
+    double obj_error = wpa_obj - tree->min_objective();
     // if (wpa || override_obj)
     //     tree->update_min_objective(wpa_objective);
 
     //double accuracy = 1 - tree->min_objective() + c*r_list.size();
 
+    /********************************
+    *** SANITY CHECK FOR OBJECTIVE **
+    *********************************/
+    // Make copy of labels
+    int labels_int[nsamples];
+    for (int i = 0; i < nsamples; i++)
+        labels_int[i] = (rule_isset(labels[1].truthtable, nsamples-i-1) != 0);
+
+    // Calculate scores
+    // double scores[nsamples];
+    for (int i = 0; i < nsamples; i++)
+        scores[i] = 0;
+    VECTOR captured, total_captured, ones;
+    rule_vinit(nsamples, &captured);
+    rule_vinit(nsamples, &total_captured);
+    rule_vinit(nsamples, &ones);
+    int ncaptured, total_ncaptured, num_ones;
+    double proportion;
+    rule_t ones_label = labels[1]; // Make copy to remove const
+    for (int i = 0; i < r_list.size(); i++) {
+        rule_t curr_rule = rules[r_list[i]];
+        printf("if (%s) then (1)\n", curr_rule.features);
+        rule_vandnot(captured, curr_rule.truthtable, total_captured, nsamples, &ncaptured);
+        rule_vor(total_captured, captured, total_captured, nsamples, &total_ncaptured);
+        // Count number of 1's
+        rule_vand(ones, captured, ones_label.truthtable, nsamples, &num_ones);
+        proportion = (double)num_ones/ncaptured;
+        update_scores(scores, nsamples, captured, wpa, i, proportion);
+    }
+    /** Default rule **/
+    rule_not(captured, total_captured, nsamples, &ncaptured);
+    ncaptured = nsamples - total_ncaptured; // rule_not() does not handle two's complement
+    // Count number of 1's
+    rule_vand(ones, captured, ones_label.truthtable, nsamples, &num_ones);
+    proportion = (double)num_ones/ncaptured;
+    update_scores(scores, nsamples, captured, wpa, r_list.size(), proportion);
+    wpa_obj = wpa_objective(scores, labels_int, wpa_max, nsamples);
+    /**********************
+    *** END SANITY CHECK **
+    ***********************/
+
     if (verbosity.count("progress")) {
         printf("final num_nodes: %zu\n", tree->num_nodes());
         printf("final num_evaluated: %zu\n", tree->num_evaluated());
-        printf("final min_objective: %1.5f\n", tree->min_objective());
+        printf("final min_objective: %1.5f\n", 1-tree->min_objective()/wpa_max);
+        printf("final wpa_objective: %1.5f\n", wpa_obj);
         printf("final accuracy: %1.5f\n",
            accuracy);
     }
