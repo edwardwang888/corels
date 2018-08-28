@@ -4,18 +4,6 @@
 #include <unistd.h>
 #include "wpa_objective.h"
 
-void update_scores(double *scores, int nsamples, VECTOR captured, int wpa, int ruleindex, double proportion)
-{
-    for (int i = 0; i < nsamples; i++) {
-        if (rule_isset(captured, nsamples-i-1)) {
-            if (wpa)
-                *(scores+i) = -1 * ruleindex;
-            else
-                *(scores+i) = proportion;
-        }
-    }
-}
-
 int main(int argc, char *argv[])
 {
     int wpa = 0;
