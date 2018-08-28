@@ -24,6 +24,27 @@ int compare_doubles(const void *a, const void *b)
     return (int)(*da - *db);
 }
 
+int count_greater(VECTOR captured, int ncaptured, VECTOR ones_label, int nsamples)
+{
+    int y[ncaptured];
+    int len = 0;
+    // printf("%d %d\n", ncaptured, count_ones_vector(captured, nsamples));
+    for (int i = 0; i < nsamples; i++) {
+        // printf("%d ", len);
+        if (rule_isset(captured, i)) {
+            y[len] = rule_isset(ones_label, i);
+            len++;
+        }
+    }
+    if (len != ncaptured)
+        printf("\nnot equal %d %d\n", len, ncaptured);
+    int count = 0;
+    for (int i = 0; i < ncaptured; i++)
+        for (int j = 0; j < ncaptured; j++)
+            count += (y[i] > y[j]);
+    return count;
+}
+
 /*
  * Performs incremental computation on a node, evaluating the bounds and inserting into the cache,
  * queue, and permutation map if appropriate.
@@ -221,9 +242,12 @@ void evaluate_children(CacheTree* tree, Node* parent, tracking_vector<unsigned s
             objective = lower_bound + (double)(num_not_captured - default_correct) / nsamples;
 
             //printf("parent->objective(): %f\n", parent->objective());
+
             if (tree->wpa()) {
                 int support = tree->rule(i).support;
-                objective = parent->objective() - c1 * d0 - ties * nsamples * num_captured + c * total_ones * total_zeros;
+                objective = parent->objective() - c1 * d0 + c * total_ones * total_zeros;
+                if (ties)
+                    objective -= ties * 0.5 * (count_greater(captured, num_captured, tree->label(1).truthtable, nsamples) + count_greater(not_captured, num_not_captured, tree->label(1).truthtable, nsamples));
             }
             logger->addToObjTime(time_diff(t2));
             logger->incObjNum();
@@ -256,14 +280,18 @@ void evaluate_children(CacheTree* tree, Node* parent, tracking_vector<unsigned s
 
             // Calculate lower bound using WPA
             if (tree->wpa()) {
-                VECTOR parent_not_captured_zeroes;
+                VECTOR parent_not_captured_zeroes, parent_not_captured_ones;
                 rule_vinit(nsamples, &parent_not_captured_zeroes);
+                rule_vinit(nsamples, &parent_not_captured_ones);
                 int num_parent_not_captured = count_ones_vector(parent_not_captured, nsamples);
-                int r0;
+                int r0, r1;
                 rule_vand(parent_not_captured_zeroes, parent_not_captured, tree->label(0).truthtable, nsamples, &r0);
-                int r1 = num_parent_not_captured - r0;
+                rule_vand(parent_not_captured_ones, parent_not_captured, tree->label(1).truthtable, nsamples, &r1);
+                r1 = num_parent_not_captured - r0;
                 int support = tree->rule(i).support;
-                lookahead_bound = parent->objective() - r1 * r0 - ties * nsamples * num_captured + c;
+                lookahead_bound = parent->objective() - r1 * r0 + c * total_zeros * total_ones;
+                if (ties)
+                    lookahead_bound -= ties * 0.5 * (count_greater(parent_not_captured_ones, r1, tree->label(1).truthtable, nsamples) + count_greater(parent_not_captured_zeroes, r0, tree->label(1).truthtable, nsamples));
             }
             lb_array[i] = lookahead_bound;
             // only add node to our datastructures if its children will be viable
@@ -275,6 +303,8 @@ void evaluate_children(CacheTree* tree, Node* parent, tracking_vector<unsigned s
                 // check permutation bound
                 if (show_proportion)
                     printf("Proportion: %f\n", proportion);
+                if (ties)
+                    objective += ties * 0.5 * count_greater(not_captured, num_not_captured, tree->label(1).truthtable, nsamples);
                 Node* n = p->insert(i, nrules, prediction, default_prediction,
                                     lower_bound, objective, parent, num_not_captured, nsamples,
                                     len_prefix, c, equivalent_minority, tree, not_captured, parent_prefix, proportion);
