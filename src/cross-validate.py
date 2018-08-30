@@ -95,8 +95,10 @@ def run_corels(args, parser):
             X_train.name += "_falling"
         if args.ties != None:
             X_train.name += "_t-{}".format(args.ties)
-        if args.random:
+        if args.random != None:
             X_train.name += "_R-{}".format(args.random)
+        if args.bound != None:
+            X_train.name += "_B-{}".format(args.bound)
 
         X_train.name += "-cross-{}_i-{}.out".format(args.num_groups, i)
         
@@ -139,6 +141,8 @@ def run_corels(args, parser):
             cmd += ['-t', "{}".format(args.ties)]
         if args.random != None:
             cmd += ['-R', "{}".format(args.random)]
+        if args.bound != None:
+            cmd += ["-B", "{}".format(args.bound)]
 
         cmd += ['-o', outfile.name, outfile_roc.name, '--append', os.path.basename(X_train.name).replace(".out", ""), os.path.basename(X_test.name).replace(".out", "")]
         

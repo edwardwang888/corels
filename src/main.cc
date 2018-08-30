@@ -52,8 +52,9 @@ int main(int argc, char *argv[]) {
     char *outfile;
     double ties = 0;
     double random = 1;
+    double bound = 1;
     /* only parsing happens here */
-    while ((ch = getopt(argc, argv, "bsLdewWc:p:v:n:r:f:a:o:t:R:")) != -1) {
+    while ((ch = getopt(argc, argv, "bsLdewWc:p:v:n:r:f:a:o:t:R:B:")) != -1) {
         switch (ch) {
         case 'b':
             run_bfs = true;
@@ -123,6 +124,9 @@ int main(int argc, char *argv[]) {
             break;
         case 'R':
             random = atof(optarg);
+            break;
+        case 'B':
+            bound = atof(optarg);
             break;
         default:
             error = true;
@@ -262,7 +266,7 @@ int main(int argc, char *argv[]) {
         printf("%s", run_type);
     // runs our algorithm
     bool change_search_path = outfile != NULL && strcmp(outfile, "default.csv") != 0;
-    bbound(tree, max_num_nodes, q, p, falling, show_proportion, change_search_path, ties, random);
+    bbound(tree, max_num_nodes, q, p, falling, show_proportion, change_search_path, ties, random, bound);
 
     printf("final num_nodes: %zu\n", tree->num_nodes());
     printf("final num_evaluated: %zu\n", tree->num_evaluated());
