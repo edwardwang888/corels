@@ -1,3 +1,5 @@
+#include "rule.h"
+
 void update_scores(double *scores, int nsamples, VECTOR captured, int wpa, int ruleindex, double proportion)
 {
     for (int i = 0; i < nsamples; i++) {
