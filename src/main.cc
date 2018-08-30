@@ -318,7 +318,7 @@ int main(int argc, char *argv[]) {
     int ncaptured, total_ncaptured, num_ones;
     double proportion;
     rule_t ones_label = labels[1]; // Make copy to remove const
-    for (int i = 0; i < r_list.size(); i++) {
+    for (size_t i = 0; i < r_list.size(); i++) {
         rule_t curr_rule = rules[r_list[i]];
         printf("if (%s) then (1)\n", curr_rule.features);
         rule_vandnot(captured, curr_rule.truthtable, total_captured, nsamples, &ncaptured);
@@ -352,7 +352,7 @@ int main(int argc, char *argv[]) {
     // Output to CSV file
     if (outfd != 0) {
         char output[100];
-        sprintf(output, "%1.20f,%lu,%1.20f,%1.20f,%1.20f,%1.20f\n", c, r_list.size(), accuracy, wpa_objective, tree->min_objective(), obj_error);
+        sprintf(output, "%1.20f,%lu,%1.20f,%1.20f,%1.20f,%1.20f\n", c, r_list.size(), accuracy, wpa_obj, tree->min_objective(), obj_error);
         if(write(outfd, output, strlen(output)) == -1)
             printf("Error in writing to %s: %s\n", outfile, strerror(errno));
         else

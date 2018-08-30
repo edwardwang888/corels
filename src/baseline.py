@@ -42,7 +42,7 @@ def run(X_train, y_train, X_test, y_test, outfile, outfile_roc, args, append=Fal
       iter = 140
       run = True
       scores_all = np.ndarray(shape=(iter, nsamples))
-      if os.access(outfile_scores, os.F_OK):
+      if outfile_scores != None and os.access(outfile_scores, os.F_OK):
             scores_all = np.genfromtxt(outfile_scores, delimiter=',')
             run = False
 
