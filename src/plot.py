@@ -10,7 +10,7 @@ names = []
 plot_all = True
 for i in range(1, len(sys.argv)):
     filename = sys.argv[i]
-    if "logistic" in filename or "rforest" in filename:
+    if "logistic" in filename or "rforest" in filename or "frl" in filename or "cross" in filename:
         plot_all = False
         data.append(np.genfromtxt(filename, delimiter=' ', dtype=dt2))
     else:
