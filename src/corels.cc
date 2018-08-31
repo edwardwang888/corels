@@ -181,7 +181,7 @@ void evaluate_children(CacheTree* tree, Node* parent, tracking_vector<unsigned s
                     printf("Proportion: %f\n", proportion);
                 Node* n = p->insert(i, nrules, prediction, default_prediction,
                                     lower_bound, objective, parent, num_not_captured, nsamples,
-                                    len_prefix, c, equivalent_minority, tree, not_captured, parent_prefix, proportion);
+                                    len_prefix, c, equivalent_minority, tree, not_captured, parent_prefix, proportion, 0);
                 logger->addToPermMapInsertionTime(time_diff(t3));
                 // n is NULL if this rule fails the permutaiton bound
                 if (n) {
@@ -253,8 +253,10 @@ void evaluate_children(CacheTree* tree, Node* parent, tracking_vector<unsigned s
             if (tree->wpa()) {
                 // int support = tree->rule(i).support;
                 objective = parent->objective() - c1 * d0 + c * total_ones * total_zeros;
-                if (ties)
+                if (ties) {
+                    objective += parent->default_objective();
                     objective -= ties * 0.5 * (count_greater(captured, num_captured, tree->label(1).truthtable, nsamples) + count_greater(not_captured, num_not_captured, tree->label(1).truthtable, nsamples));
+                }
             }
             logger->addToObjTime(time_diff(t2));
             logger->incObjNum();
@@ -318,11 +320,12 @@ void evaluate_children(CacheTree* tree, Node* parent, tracking_vector<unsigned s
                     // check permutation bound
                     if (show_proportion)
                         printf("Proportion: %f\n", proportion);
+                    double default_objective = 0;
                     if (ties)
-                        objective += ties * 0.5 * count_greater(not_captured, num_not_captured, tree->label(1).truthtable, nsamples);
+                        default_objective = ties * 0.5 * count_greater(not_captured, num_not_captured, tree->label(1).truthtable, nsamples);
                     Node* n = p->insert(i, nrules, prediction, default_prediction,
                                         lower_bound, objective, parent, num_not_captured, nsamples,
-                                        len_prefix, c, equivalent_minority, tree, not_captured, parent_prefix, proportion);
+                                        len_prefix, c, equivalent_minority, tree, not_captured, parent_prefix, proportion, default_objective);
                     logger->addToPermMapInsertionTime(time_diff(t3));
                     // n is NULL if this rule fails the permutaiton bound
                     if (n) {

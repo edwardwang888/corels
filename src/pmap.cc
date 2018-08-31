@@ -10,7 +10,7 @@ Node* PrefixPermutationMap::insert (unsigned short new_rule, size_t nrules, bool
         bool default_prediction, double lower_bound, double objective, Node* parent, 
         int num_not_captured, int nsamples, int len_prefix, double c, double equivalent_minority,
         CacheTree* tree, VECTOR not_captured, tracking_vector<unsigned short, 
-        DataStruct::Tree> parent_prefix, double proportion) {
+        DataStruct::Tree> parent_prefix, double proportion, double default_objective) {
     (void) not_captured;
     logger->incPermMapInsertionNum();
     parent_prefix.push_back(new_rule);
@@ -53,14 +53,14 @@ Node* PrefixPermutationMap::insert (unsigned short new_rule, size_t nrules, bool
             child = tree->construct_node(new_rule, nrules, prediction,
                                      default_prediction, lower_bound, objective,
                                      parent, num_not_captured, nsamples,
-                                     len_prefix, c, equivalent_minority, proportion);
+                                     len_prefix, c, equivalent_minority, proportion, default_objective);
             iter->second = std::make_pair(lower_bound, ordered);
         }
     } else {
         child = tree->construct_node(new_rule, nrules, prediction,
                                  default_prediction, lower_bound, objective,
                                  parent, num_not_captured, nsamples, len_prefix,
-                                 c, equivalent_minority, proportion);
+                                 c, equivalent_minority, proportion, default_objective);
         unsigned char* ordered_prefix = &ordered[0];
         pmap->insert(std::make_pair(key, std::make_pair(lower_bound, ordered_prefix)));
         logger->incPmapSize();
@@ -71,7 +71,7 @@ Node* PrefixPermutationMap::insert (unsigned short new_rule, size_t nrules, bool
 Node* CapturedPermutationMap::insert(unsigned short new_rule, size_t nrules, bool prediction, 
         bool default_prediction, double lower_bound, double objective, Node* parent, int num_not_captured, 
         int nsamples, int len_prefix, double c, double equivalent_minority, CacheTree* tree, 
-        VECTOR not_captured, tracking_vector<unsigned short, DataStruct::Tree> parent_prefix, double proportion) {
+        VECTOR not_captured, tracking_vector<unsigned short, DataStruct::Tree> parent_prefix, double proportion, double default_objective) {
     logger->incPermMapInsertionNum();
     parent_prefix.push_back(new_rule);
     Node* child = NULL;
@@ -97,13 +97,13 @@ Node* CapturedPermutationMap::insert(unsigned short new_rule, size_t nrules, boo
             }
             child = tree->construct_node(new_rule, nrules, prediction, default_prediction,
                                        lower_bound, objective, parent,
-                                        num_not_captured, nsamples, len_prefix, c, equivalent_minority, proportion);
+                                        num_not_captured, nsamples, len_prefix, c, equivalent_minority, proportion, default_objective);
             iter->second = std::make_pair(lower_bound, parent_prefix);
         }
     } else {
         child = tree->construct_node(new_rule, nrules, prediction, default_prediction,
                                     lower_bound, objective, parent,
-                                    num_not_captured, nsamples, len_prefix, c, equivalent_minority, proportion);
+                                    num_not_captured, nsamples, len_prefix, c, equivalent_minority, proportion, default_objective);
         pmap->insert(std::make_pair(key, std::make_pair(lower_bound, parent_prefix)));
         logger->incPmapSize();
     }
