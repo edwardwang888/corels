@@ -345,7 +345,7 @@ void evaluate_children(CacheTree* tree, Node* parent, tracking_vector<unsigned s
                 qsort(lb_array, nrules, sizeof(double), compare_doubles);
                 for (int i = nrules - 1; i >= 0; i--) {
                     if (lb_array[i] == 0) {
-                        start = i;
+                        start = i+1;
                         break;
                     }
                 }

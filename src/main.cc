@@ -265,7 +265,8 @@ int main(int argc, char *argv[]) {
     if (verbosity.count("progress"))
         printf("%s", run_type);
     // runs our algorithm
-    bool change_search_path = outfile != NULL && strcmp(outfile, "default.csv") != 0;
+    // bool change_search_path = outfile != NULL && strcmp(outfile, "default.csv") != 0;
+    bool change_search_path = false; // Deprecated option
     bbound(tree, max_num_nodes, q, p, falling, show_proportion, change_search_path, ties, random, bound);
 
     printf("final num_nodes: %zu\n", tree->num_nodes());
