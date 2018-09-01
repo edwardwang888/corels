@@ -4,6 +4,7 @@
 #include <sys/resource.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 Queue::Queue(std::function<bool(Node*, Node*)> cmp, char const *type)
     : q_(new q (cmp)), type_(type) {}
@@ -413,7 +414,7 @@ int bbound(CacheTree* tree, size_t max_num_nodes, Queue* q, PermutationMap* p, b
     logger->dumpState();
  //   if (tree->wpa())
  //       min_objective = tree->min_objective();
-    while ((tree->num_nodes() < max_num_nodes) && !q->empty() && (max_iter == -1 || (int)num_iter < max_iter)) {
+    while ((tree->num_nodes() < max_num_nodes) && !q->empty() && (max_iter == -1 || (int)num_iter < max_iter) && sysconf(_SC_AVPHYS_PAGES) > sysconf (_SC_PHYS_PAGES) * 0.0001) {
         double t0 = timestamp();
         std::pair<Node*, tracking_vector<unsigned short, DataStruct::Tree> > node_ordered = q->select(tree, captured);
         logger->addToNodeSelectTime(time_diff(t0));
