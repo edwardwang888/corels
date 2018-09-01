@@ -383,10 +383,10 @@ void evaluate_children(CacheTree* tree, Node* parent, tracking_vector<unsigned s
  */
 int bbound(CacheTree* tree, size_t max_num_nodes, Queue* q, PermutationMap* p)
 {
-    return bbound(tree, max_num_nodes, q, p, false, false, false, 0, 1, 1);
+    return bbound(tree, max_num_nodes, q, p, false, false, false, 0, 1, 1, -1);
 }
 
-int bbound(CacheTree* tree, size_t max_num_nodes, Queue* q, PermutationMap* p, bool falling, bool show_proportion, bool change_search_path, double ties, double random, double bound) {
+int bbound(CacheTree* tree, size_t max_num_nodes, Queue* q, PermutationMap* p, bool falling, bool show_proportion, bool change_search_path, double ties, double random, double bound, int max_iter) {
     size_t num_iter = 0;
     int cnt;
     double min_objective;
@@ -413,7 +413,7 @@ int bbound(CacheTree* tree, size_t max_num_nodes, Queue* q, PermutationMap* p, b
     logger->dumpState();
  //   if (tree->wpa())
  //       min_objective = tree->min_objective();
-    while ((tree->num_nodes() < max_num_nodes) && !q->empty()) {
+    while ((tree->num_nodes() < max_num_nodes) && !q->empty() && (max_iter == -1 || (int)num_iter < max_iter)) {
         double t0 = timestamp();
         std::pair<Node*, tracking_vector<unsigned short, DataStruct::Tree> > node_ordered = q->select(tree, captured);
         logger->addToNodeSelectTime(time_diff(t0));

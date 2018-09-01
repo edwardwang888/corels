@@ -53,8 +53,9 @@ int main(int argc, char *argv[]) {
     double ties = 0;
     double random = 1;
     double bound = 1;
+    int max_iter = -1;
     /* only parsing happens here */
-    while ((ch = getopt(argc, argv, "bsLdewWc:p:v:n:r:f:a:o:t:R:B:")) != -1) {
+    while ((ch = getopt(argc, argv, "bsLdewWc:p:v:n:r:f:a:o:t:R:B:i:")) != -1) {
         switch (ch) {
         case 'b':
             run_bfs = true;
@@ -128,6 +129,9 @@ int main(int argc, char *argv[]) {
         case 'B':
             bound = atof(optarg);
             break;
+        case 'i':
+            max_iter = atoi(optarg);
+            break;
         default:
             error = true;
             snprintf(error_txt, BUFSZ, "unknown option: %c", ch);
@@ -194,7 +198,7 @@ int main(int argc, char *argv[]) {
     char log_fname[BUFSZ];
     char opt_fname[BUFSZ];
     const char* pch = strrchr(argv[0], '/');
-    snprintf(froot, BUFSZ, "../logs/for-%s-%s%s-%s-%s-removed=%s-max_num_nodes=%d-c=%.7f-v=%s-f=%d-wpa=%d-falling=%d-t=%f-B=%f-R=%f",
+    snprintf(froot, BUFSZ, "../logs/for-%s-%s%s-%s-%s-removed=%s-max_num_nodes=%d-c=%.7f-v=%s-f=%d-wpa=%d-falling=%d-t=%f-B=%f-R=%f-i=%d",
             pch ? pch + 1 : "",
             run_bfs ? "bfs" : "",
             run_curiosity ? curiosity_map[curiosity_policy].c_str() : "",
@@ -202,7 +206,7 @@ int main(int argc, char *argv[]) {
                 (use_captured_sym_map ? "with_captured_symmetry_map" : "no_pmap"),
             meta ? "minor" : "no_minor",
             ablation ? ((ablation == 1) ? "support" : "lookahead") : "none",
-            max_num_nodes, c, "0", freq, wpa, falling, ties, bound, random);
+            max_num_nodes, c, "0", freq, wpa, falling, ties, bound, random, max_iter);
     snprintf(log_fname, BUFSZ, "%s.txt", froot);
     snprintf(opt_fname, BUFSZ, "%s-opt.txt", froot);
 
@@ -267,7 +271,7 @@ int main(int argc, char *argv[]) {
     // runs our algorithm
     // bool change_search_path = outfile != NULL && strcmp(outfile, "default.csv") != 0;
     bool change_search_path = false; // Deprecated option
-    bbound(tree, max_num_nodes, q, p, falling, show_proportion, change_search_path, ties, random, bound);
+    bbound(tree, max_num_nodes, q, p, falling, show_proportion, change_search_path, ties, random, bound, max_iter);
 
     printf("final num_nodes: %zu\n", tree->num_nodes());
     printf("final num_evaluated: %zu\n", tree->num_evaluated());
