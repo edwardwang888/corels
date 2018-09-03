@@ -255,8 +255,9 @@ void evaluate_children(CacheTree* tree, Node* parent, tracking_vector<unsigned s
                 // int support = tree->rule(i).support;
                 objective = parent->objective() - c1 * d0 + c * total_ones * total_zeros;
                 if (ties) {
-                    objective += parent->default_objective();
-                    objective -= ties * 0.5 * (count_greater(captured, num_captured, tree->label(1).truthtable, nsamples) + count_greater(not_captured, num_not_captured, tree->label(1).truthtable, nsamples));
+                    //objective += parent->default_objective();
+                    //objective -= ties * 0.5 * (count_greater(captured, num_captured, tree->label(1).truthtable, nsamples) + count_greater(not_captured, num_not_captured, tree->label(1).truthtable, nsamples));
+                    objective -= 0.5 * c1 * c0;
                 }
             }
             logger->addToObjTime(time_diff(t2));
@@ -306,8 +307,8 @@ void evaluate_children(CacheTree* tree, Node* parent, tracking_vector<unsigned s
                 // r1 = num_parent_not_captured - r0;
                 // int support = tree->rule(i).support;
                 lookahead_bound = objective - r1 * r0 + c * total_zeros * total_ones;
-                if (ties)
-                    lookahead_bound -= ties * 0.5 * (count_greater(total_not_captured_ones, r1, tree->label(1).truthtable, nsamples) + count_greater(total_not_captured_zeroes, r0, tree->label(1).truthtable, nsamples));
+                // if (ties)
+                //     lookahead_bound -= ties * 0.5 * (count_greater(total_not_captured_ones, r1, tree->label(1).truthtable, nsamples) + count_greater(total_not_captured_zeroes, r0, tree->label(1).truthtable, nsamples));
             }
             if (first_run)
                 lb_array[i] = lookahead_bound;
@@ -322,8 +323,8 @@ void evaluate_children(CacheTree* tree, Node* parent, tracking_vector<unsigned s
                     if (show_proportion)
                         printf("Proportion: %f\n", proportion);
                     double default_objective = 0;
-                    if (ties)
-                        default_objective = ties * 0.5 * count_greater(not_captured, num_not_captured, tree->label(1).truthtable, nsamples);
+                    // if (ties)
+                    //     default_objective = ties * 0.5 * count_greater(not_captured, num_not_captured, tree->label(1).truthtable, nsamples);
                     lower_bound = lookahead_bound;
                     Node* n = p->insert(i, nrules, prediction, default_prediction,
                                         lower_bound, objective, parent, num_not_captured, nsamples,
