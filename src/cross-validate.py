@@ -86,25 +86,15 @@ def run_corels(args, parser):
         print(i)
         outfile_roc = tempfile.NamedTemporaryFile(dir="../data", suffix="_roc.csv")
 
-        X_train = tempfile.NamedTemporaryFile(dir="../data", suffix=".out")
+        X_train = tempfile.NamedTemporaryFile(dir="../data", suffix=".out", delete=False)
         os.unlink(X_train.name)
         X_train.name = "../data/{}".format(args.data_train)
-        if args.wpa:
-            X_train.name += "_wpa"
-        if args.falling:
-            X_train.name += "_falling"
-        if args.ties != None:
-            X_train.name += "_t-{}".format(args.ties)
-        if args.random != None:
-            X_train.name += "_R-{}".format(args.random)
-        if args.bound != None:
-            X_train.name += "_B-{}".format(args.bound)
 
         X_train.name += "-cross-{}_i-{}.out".format(args.num_groups, i)
         
         X_test = tempfile.NamedTemporaryFile(dir="../data", suffix=".out")
         
-        y_train = tempfile.NamedTemporaryFile(dir="../data")
+        y_train = tempfile.NamedTemporaryFile(dir="../data", delete=False)
         os.unlink(y_train.name)
         y_train.name = X_train.name.replace(".out", ".label")
         

@@ -104,10 +104,6 @@ def gen_filename_roc(args, parser, include_val=True):
         outfile += "_c{}".format(args.c)
     if args.p != None:
         outfile += "_p{}".format(args.p)
-    if args.r_start != parser.get_default('r_start') and args.step != None:
-        outfile += "_r{}".format(args.r_start)
-    if args.step != None:
-        outfile += "_s{}".format(args.step)
     if args.max_num_nodes != None:
         outfile += "_n-{}".format(args.max_num_nodes)
     if args.ties != None:
@@ -165,32 +161,6 @@ def main():
         outfile = args.outfile[0]
         outfile_roc = args.outfile[1]
     else:
-        # outfile = args.data_train
-        # if args.wpa:
-        #     outfile += "_wpa"
-        # if args.falling:
-        #     outfile += "_falling"
-        # if args.b:
-        #     outfile += "_b"
-        # if args.c != None:
-        #     outfile += "_c{}".format(args.c)
-        # if args.p != None:
-        #     outfile += "_p{}".format(args.p)
-        # if args.r_start != parser.get_default('r_start') and args.step != None:
-        #     outfile += "_r{}".format(args.r_start)
-        # if args.step != None:
-        #     outfile += "_s{}".format(args.step)
-        # if args.max_num_nodes != None:
-        #     outfile += "_n{}".format(args.max_num_nodes)
-        # if args.data_train != args.data_test:
-        #     outfile += "_val-{}".format(args.data_test)
-        # # if args.roc:
-        # outfile += "_roc"
-        # if args.text != None:
-        #     outfile += "_{}".format(args.text)
-
-        # outfile += ".csv"
-
         outfile_roc = gen_filename_roc(args, parser)
         outfile = outfile_roc.replace("_roc", "")
 
