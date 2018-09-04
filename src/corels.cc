@@ -415,7 +415,7 @@ int bbound(CacheTree* tree, size_t max_num_nodes, Queue* q, PermutationMap* p, b
     logger->dumpState();
  //   if (tree->wpa())
  //       min_objective = tree->min_objective();
-    while ((tree->num_nodes() < max_num_nodes) && !q->empty() && (max_iter == -1 || (int)num_iter < max_iter) && sysconf(_SC_AVPHYS_PAGES) > sysconf (_SC_PHYS_PAGES) * 0.0001) {
+    while ((tree->num_nodes() < max_num_nodes) && !q->empty() && (max_iter == -1 || (int)num_iter < max_iter) && sysconf(_SC_AVPHYS_PAGES) > sysconf (_SC_PHYS_PAGES) * 0.01) {
         double t0 = timestamp();
         std::pair<Node*, tracking_vector<unsigned short, DataStruct::Tree> > node_ordered = q->select(tree, captured);
         logger->addToNodeSelectTime(time_diff(t0));
@@ -493,7 +493,9 @@ int bbound(CacheTree* tree, size_t max_num_nodes, Queue* q, PermutationMap* p, b
         printf("\nminimum objective: %1.10f\n", tree->min_objective());
     }
 
-    // DEBIGGING ONLY (disable logging)
+    // DEBUGGING ONLY (disable logging)
+    rule_vfree(&captured);
+    rule_vfree(&not_captured);
     return num_iter;
 
     Node* node;
