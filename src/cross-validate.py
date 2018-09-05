@@ -111,7 +111,7 @@ def run_corels(args, parser):
         csv_gen(labels, y_train.name, train_cols)
         
         cmd = ['python', 'corels_test.py']
-        if args.r_start != parser.get_default('r_start'):
+        if args.r_start != parser.get_default('r_start') and i == args.g:
             cmd += ['-r', "{}".format(args.r_start)]
         if args.b:
             cmd.append('-b')
