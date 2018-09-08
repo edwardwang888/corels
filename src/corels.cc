@@ -10,7 +10,7 @@ Queue::Queue(std::function<bool(Node*, Node*)> cmp, char const *type)
     : q_(new q (cmp)), type_(type) {}
 
 bool has_falling_constraint(double proportion, double parent_proportion, double default_proportion) {
-    return (parent_proportion == 0 || parent_proportion > proportion) && proportion > default_proportion;
+    return (parent_proportion - 0 < 0.000000001 || parent_proportion > proportion) && proportion > default_proportion;
 }
 
 int random_search(double p)
