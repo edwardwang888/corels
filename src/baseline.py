@@ -1,5 +1,6 @@
 import sys
-sys.path[:0] = ["/Library/Python/2.7/site-packages/", "/Users/edwardwang/Documents/falling_rule_list/"]
+sys.path[:0] = ["/Library/Python/2.7/site-packages/", "/Users/edwardwang/Documents/falling_rule_list/",
+"/home/home2/edwardw/bbcache/src/falling_rule_list"]
 import numpy as np
 import pandas as pd
 from sklearn import linear_model
