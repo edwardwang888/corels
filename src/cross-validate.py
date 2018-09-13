@@ -16,6 +16,7 @@ from time import sleep
 from utils import check_outfile, check_outfile_roc
 
 plot_i = 1
+failed = 0
 
 def plot_roc(outfile_roc):
     global plot_i
@@ -137,8 +138,10 @@ def run_corels(args, parser):
         cmd += ['-o', outfile.name, outfile_roc.name, '--append', os.path.basename(X_train.name).replace(".out", ""), os.path.basename(X_test.name).replace(".out", "")]
         
         print(cmd)
-        p = subprocess.Popen(cmd)
-        p.wait()
+        p = subprocess.Popen(cmd, stderr=subprocess.PIPE)
+        stderr = p.communicate()[1]
+        global failed
+        failed += int(stderr)
 
         fpr, tpr = roc.find_max_roc(outfile_roc.name)
         roc.write_to_file(fpr, tpr, final_outfile_roc)
@@ -147,6 +150,8 @@ def run_corels(args, parser):
     ## Average runs and output
     csv = pd.read_csv(outfile.name, sep=' ', header=None)
     csv.groupby(0).mean().to_csv(final_outfile, sep=' ', header=False, index=True)
+
+    print("Failed: {}".format(failed))
 
     if args.roc:
         plot_roc(final_outfile_roc)

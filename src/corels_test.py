@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 import roc
 from utils import wpa_objective
 
+failed = 0
 
 def run(r, outfile, outfile_roc, data_train, data_test, falling, wpa, max_num_nodes, b, c, p, ties, random, bound):
     data_minor = "../data/{}.minor".format(data_train)
@@ -48,6 +49,8 @@ def run(r, outfile, outfile_roc, data_train, data_test, falling, wpa, max_num_no
 
     # Read in rule list from log file
     if p.poll() != 0:
+	global failed
+	failed += 1
         return
     start = stdout.find("../logs/")
     end = stdout.find("\n", start)
@@ -209,6 +212,8 @@ def main():
     if args.roc:
         roc.plot(outfile_roc)
         roc.show()
+
+    sys.stderr.write("{}".format(failed))
    
 
 if __name__ == "__main__":
