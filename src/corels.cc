@@ -376,6 +376,18 @@ void evaluate_children(CacheTree* tree, Node* parent, tracking_vector<unsigned s
             }
             if (i == nrules - 1 && first_run) {
                 first_run = 0;
+                // Replace NAN values with zero
+		// printf("Before sorting:\n");
+		for (int i = 0; i < nrules; i++) {
+		    // fprintf(stderr, "%f ", lb_array[i]);
+		    if (isnan(lb_array[i])) {
+		    	/* printf("NAN\n");
+			getchar(); */
+			lb_array[i] = 0;
+		    }
+		}
+		// fprintf(stderr, "\n");
+		// getchar();
                 qsort(lb_array, nrules, sizeof(double), compare_doubles);
                 for (int i = nrules - 1; i >= 0; i--) {
                     if (lb_array[i] == 0) {
