@@ -68,7 +68,7 @@ def run_corels(args, parser):
     final_outfile = corels_test.gen_filename_roc(args, parser, include_val=False).replace("_roc", "_cross-{}".format(args.num_groups))
     final_outfile_roc = final_outfile.replace(".csv", "_roc.csv")
     if check_outfile_roc(final_outfile_roc) == "n" and args.roc:
-        print("Outfile: {}".format(final_outfile))
+        print("File {} contains objective value data.".format(final_outfile))
         plot_roc(final_outfile_roc)
         return
 
