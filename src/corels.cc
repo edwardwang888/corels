@@ -14,6 +14,13 @@ bool has_falling_constraint(double proportion, double parent_proportion, double 
     return (parent_proportion - 0 < 0.000000001 || parent_proportion > proportion) && proportion > default_proportion;
 }
 
+int a(int base, int pow) {
+    int value = 1;
+    for (int i = 0; i < pow; i++)
+        value *= base;
+    return value;
+}
+
 /*
 int random_search(double p)
 {
@@ -57,7 +64,7 @@ int count_greater(VECTOR captured, int ncaptured, VECTOR ones_label, int nsample
  * parent -- the node that is going to have all of its children evaluated.
  * parent_not_captured -- the vector representing data points NOT captured by the parent.
  */
-void evaluate_children(CacheTree* tree, Node* parent, tracking_vector<unsigned short, DataStruct::Tree> parent_prefix, VECTOR parent_not_captured, Queue* q, PermutationMap* p, bool falling, bool show_proportion, bool change_search_path, double ties, double random, double bound) {
+void evaluate_children(CacheTree* tree, Node* parent, tracking_vector<unsigned short, DataStruct::Tree> parent_prefix, VECTOR parent_not_captured, Queue* q, PermutationMap* p, bool falling, bool show_proportion, bool change_search_path, double ties, double random, double bound, int x) {
     VECTOR captured, captured_zeros, not_captured, not_captured_zeros, not_captured_equivalent;
     int num_captured, c0, c1, captured_correct;
     int num_not_captured, d0, d1, default_correct, num_not_captured_equivalent;
@@ -256,7 +263,7 @@ void evaluate_children(CacheTree* tree, Node* parent, tracking_vector<unsigned s
 
             if (tree->wpa()) {
                 // int support = tree->rule(i).support;
-                objective = parent->objective() - c1 * d0 + c * total_ones * total_zeros;
+                objective = parent->objective() - c1 * a(d0, x) + c * total_ones * total_zeros;
                 if (ties) {
                     //objective += parent->default_objective();
                     //objective -= ties * 0.5 * (count_greater(captured, num_captured, tree->label(1).truthtable, nsamples) + count_greater(not_captured, num_not_captured, tree->label(1).truthtable, nsamples));
@@ -309,7 +316,7 @@ void evaluate_children(CacheTree* tree, Node* parent, tracking_vector<unsigned s
                 rule_vand(total_not_captured_ones, total_not_captured, tree->label(1).truthtable, nsamples, &r1);
                 // r1 = num_parent_not_captured - r0;
                 // int support = tree->rule(i).support;
-                lookahead_bound = objective - r1 * r0 + c * total_zeros * total_ones;
+                lookahead_bound = objective - r1 * a(r0, x) + c * total_zeros * total_ones;
                 // if (ties)
                 //     lookahead_bound -= ties * 0.5 * (count_greater(total_not_captured_ones, r1, tree->label(1).truthtable, nsamples) + count_greater(total_not_captured_zeroes, r0, tree->label(1).truthtable, nsamples));
             }
@@ -427,10 +434,10 @@ void evaluate_children(CacheTree* tree, Node* parent, tracking_vector<unsigned s
  */
 int bbound(CacheTree* tree, size_t max_num_nodes, Queue* q, PermutationMap* p)
 {
-    return bbound(tree, max_num_nodes, q, p, false, false, false, 0, 1, 1, -1);
+    return bbound(tree, max_num_nodes, q, p, false, false, false, 0, 1, 1, -1, 1);
 }
 
-int bbound(CacheTree* tree, size_t max_num_nodes, Queue* q, PermutationMap* p, bool falling, bool show_proportion, bool change_search_path, double ties, double random, double bound, int max_iter) {
+int bbound(CacheTree* tree, size_t max_num_nodes, Queue* q, PermutationMap* p, bool falling, bool show_proportion, bool change_search_path, double ties, double random, double bound, int max_iter, int x) {
     size_t num_iter = 0;
     int cnt;
     double min_objective;
@@ -470,7 +477,7 @@ int bbound(CacheTree* tree, size_t max_num_nodes, Queue* q, PermutationMap* p, b
             rule_vandnot(not_captured,
                          tree->rule(0).truthtable, captured,
                          tree->nsamples(), &cnt);
-            evaluate_children(tree, node_ordered.first, node_ordered.second, not_captured, q, p, falling, show_proportion, change_search_path, ties, random, bound);
+            evaluate_children(tree, node_ordered.first, node_ordered.second, not_captured, q, p, falling, show_proportion, change_search_path, ties, random, bound, x);
             logger->addToEvalChildrenTime(time_diff(t1));
             logger->incEvalChildrenNum();
             
