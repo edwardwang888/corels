@@ -14,10 +14,12 @@ bool has_falling_constraint(double proportion, double parent_proportion, double 
     return (parent_proportion - 0 < 0.000000001 || parent_proportion > proportion) && proportion > default_proportion;
 }
 
+/*
 int random_search(double p)
 {
     return random() <= p * RAND_MAX;
 }
+*/
 
 int compare_doubles(const void *a, const void *b)
 {
@@ -139,7 +141,7 @@ void evaluate_children(CacheTree* tree, Node* parent, tracking_vector<unsigned s
             // Should falling constraint go here too?
             double proportion = (double)c1/num_captured;
             double default_proportion = (double)d1/num_not_captured;
-            if (objective < tree->min_objective() && random_search(random) && \
+            if (objective < tree->min_objective() && \
             (falling == false || has_falling_constraint(proportion, parent->proportion(), default_proportion))) {
                 if (verbosity.count("progress")) {
                     printf("min(objective): %1.5f -> %1.5f, length: %d, cache size: %zu\n",
@@ -175,7 +177,7 @@ void evaluate_children(CacheTree* tree, Node* parent, tracking_vector<unsigned s
             }
             // only add node to our datastructures if its children will be viable
             // also add falling constraint
-            if (lookahead_bound < tree->min_objective() && random_search(random) && \
+            if (lookahead_bound < tree->min_objective() && \
                 (falling == false || has_falling_constraint(proportion, parent->proportion(), default_proportion))) {
                 double t3 = timestamp();
                 // check permutation bound
@@ -343,7 +345,7 @@ void evaluate_children(CacheTree* tree, Node* parent, tracking_vector<unsigned s
 		    getchar();
 		}
 		*/
-		if (lookahead_bound < tree->min_objective() && random_search(random) && \
+		if (lookahead_bound < tree->min_objective() && \
                     lookahead_bound <= lb_array[(int)(start + bound * (nrules - 1 - start))] && \
                     (falling == false || has_falling_constraint(proportion, parent->proportion(), default_proportion))) {
                     double t3 = timestamp();
