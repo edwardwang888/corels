@@ -82,7 +82,7 @@ void evaluate_children(CacheTree* tree, Node* parent, tracking_vector<unsigned s
 
     int total_zeros = tree->label(0).support;
     int total_ones = nsamples - total_zeros;
-
+    int wpa_max = total_zeros * total_ones;
 
     // nrules is actually the number of rules + 1 (since it includes the default rule), so the maximum
     // value of i is nrules - 1 instead of nrules
@@ -355,7 +355,7 @@ void evaluate_children(CacheTree* tree, Node* parent, tracking_vector<unsigned s
                     double default_objective = 0;
                     // if (ties)
                     //     default_objective = ties * 0.5 * count_greater(not_captured, num_not_captured, tree->label(1).truthtable, nsamples);
-                    lower_bound = lookahead_bound;
+                    lower_bound = lookahead_bound/wpa_max;
                     Node* n = p->insert(i, nrules, prediction, default_prediction,
                                         lower_bound, objective, parent, num_not_captured, nsamples,
                                         len_prefix, c, equivalent_minority, tree, not_captured, parent_prefix, proportion, default_objective);
