@@ -343,8 +343,8 @@ void evaluate_children(CacheTree* tree, Node* parent, tracking_vector<unsigned s
 		    getchar();
 		}
 		*/
-                if (lookahead_bound < tree->min_objective() && random_search(random) && \
-                    lookahead_bound < lb_array[(int)(start + bound * (nrules - 1 - start))] && \
+		if (lookahead_bound < tree->min_objective() && random_search(random) && \
+                    lookahead_bound <= lb_array[(int)(start + bound * (nrules - 1 - start))] && \
                     (falling == false || has_falling_constraint(proportion, parent->proportion(), default_proportion))) {
                     double t3 = timestamp();
                     // check permutation bound
