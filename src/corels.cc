@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <fenv.h>
 
 Queue::Queue(std::function<bool(Node*, Node*)> cmp, char const *type)
     : q_(new q (cmp)), type_(type) {}
@@ -310,11 +311,38 @@ void evaluate_children(CacheTree* tree, Node* parent, tracking_vector<unsigned s
                 // if (ties)
                 //     lookahead_bound -= ties * 0.5 * (count_greater(total_not_captured_ones, r1, tree->label(1).truthtable, nsamples) + count_greater(total_not_captured_zeroes, r0, tree->label(1).truthtable, nsamples));
             }
-            if (first_run)
+            if (first_run) {
                 lb_array[i] = lookahead_bound;
+		/*
+		if (isnan(lb_array[i])) {
+		    printf("NAN\n");
+		    getchar();
+		}
+		*/
+	    }
             // only add node to our datastructures if its children will be viable
             // also add falling constraint
             if (!first_run) {
+		/*
+		printf("After sorting:\n");
+                for (int i = 0; i < nrules; i++)
+		    fprintf(stderr, "%f ", lb_array[i]);
+		fprintf(stderr, "\n");
+		if (lookahead_bound > lb_array[(int)(start + bound * (nrules - 1 - start))]) {
+		    printf("%f\n", lookahead_bound);
+		    getchar();
+		}
+		if (fetestexcept(FE_ALL_EXCEPT)) {
+		    printf("FP exception\n");
+		    printf("%f\n", lookahead_bound);
+		    printf("%d %d %d %d %d\n", FE_UNDERFLOW, FE_OVERFLOW, FE_INVALID, FE_INEXACT, FE_DIVBYZERO);
+		    // getchar();
+		}
+		if (isnan(lookahead_bound)) {
+		    printf("NAN\n");
+		    getchar();
+		}
+		*/
                 if (lookahead_bound < tree->min_objective() && random_search(random) && \
                     lookahead_bound < lb_array[(int)(start + bound * (nrules - 1 - start))] && \
                     (falling == false || has_falling_constraint(proportion, parent->proportion(), default_proportion))) {
