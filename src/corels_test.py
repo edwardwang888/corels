@@ -115,6 +115,8 @@ def gen_filename_roc(args, parser, include_val=True):
         outfile += "_R-{}".format(args.random)
     if args.bound != None:
         outfile += "_B-{}".format(args.bound)
+    if args.r != None:
+        outfile += "_r-{}".format(args.r)
     if include_val and args.data_train != args.data_test:
         outfile += "_val-{}".format(args.data_test)
     # if args.roc:
@@ -131,7 +133,8 @@ def parent_parser():
     parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument("data_train", help="Training data (in ../data/)")
     parser.add_argument("--roc", help="Plot ROC curve", action="store_true", dest="roc")
-    parser.add_argument("-r", help="starting regularization", action="store", type=float, default=0.7515, dest="r_start")
+    parser.add_argument("-r_start", help="starting regularization", action="store", type=float, default=0.7515, dest="r_start")
+    parser.add_argument("-r", help="single regularization to run", action="store", type=float, dest="r")
     parser.add_argument("-b", help="breadth first search", action="store_true", dest="b")
     parser.add_argument("-c", help="best first search policy", type=int, choices=[1,2,3,4], action="store", dest="c")
     parser.add_argument("-p", help="symmetry aware map", type=int, choices=[0,1,2], action="store", dest="p")
@@ -193,21 +196,27 @@ def main():
         iter = int(args.r_start/args.step)
     else:
         iter = 140
-    for i in range(iter):
-        if r <= args.r_start:
-            run(r, outfile, outfile_roc, args.data_train, args.data_test, args.falling, args.wpa, args.max_num_nodes, args.b, args.c, args.p, args.ties, args.random, args.bound)
-            
-        if args.step == None:
-            r /= 1.0525
-        else:
-            r -= args.step
-        
-    while r > 0.0000001 and args.step != None:
-        run(r, outfile, outfile_roc, args.data_train, args.data_test, args.falling, args.wpa, args.max_num_nodes, args.b, args.c, args.p, args.ties, args.random, args.bound)
-        r /= 1.0525
 
-    #Run with zero regularity
-    run(0, outfile, outfile_roc, args.data_train, args.data_test, args.falling, args.wpa, args.max_num_nodes, args.b, args.c, args.p, args.ties, args.random, args.bound)
+    if args.r == None:
+        for i in range(iter):
+            if r <= args.r_start:
+                run(r, outfile, outfile_roc, args.data_train, args.data_test, args.falling, args.wpa, args.max_num_nodes, args.b, args.c, args.p, args.ties, args.random, args.bound)
+
+            if args.step == None:
+                r /= 1.0525
+            else:
+                r -= args.step
+            
+        while r > 0.0000001 and args.step != None:
+            run(r, outfile, outfile_roc, args.data_train, args.data_test, args.falling, args.wpa, args.max_num_nodes, args.b, args.c, args.p, args.ties, args.random, args.bound)
+            r /= 1.0525
+
+        #Run with zero regularity
+        run(0, outfile, outfile_roc, args.data_train, args.data_test, args.falling, args.wpa, args.max_num_nodes, args.b, args.c, args.p, args.ties, args.random, args.bound)
+
+    else:
+        run(args.r, outfile, outfile_roc, args.data_train, args.data_test, args.falling, args.wpa, args.max_num_nodes, args.b, args.c, args.p, args.ties, args.random, args.bound)
+
 
     if args.roc:
         roc.plot(outfile_roc)
