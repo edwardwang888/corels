@@ -244,8 +244,8 @@ def run_baseline_main(args, parser):
         run_baseline(args, parser, "frl")
 
 
-def main():
-    parser = argparse.ArgumentParser(description="Perform cross validation")
+def get_parser():
+    parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument("--val", help="Number of groups to split dataset into", action="store", required=True, type=int, dest="num_groups")
     parser.add_argument("-g", help="group index range to run", action="store", type=int, nargs=2, dest="g")
     subparsers = parser.add_subparsers()
@@ -255,7 +255,11 @@ def main():
 
     baseline_parser = subparsers.add_parser('baseline', parents=[baseline.parent_parser()], help="Run baseline")
     baseline_parser.set_defaults(func=run_baseline_main)
+    return parser
 
+
+def main():
+    parser = argparse.ArgumentParser(parents=[get_parser()], help="Perform cross validation")
     args = parser.parse_args()
     args.func(args, parser)
 
