@@ -4,7 +4,6 @@ import sys
 sys.path[:0] = ["/Library/Python/2.7/site-packages/"]
 import subprocess
 import csv
-from time import sleep
 import numpy as np
 from sklearn import metrics
 import matplotlib.pyplot as plt
@@ -160,7 +159,6 @@ def main():
 
     os.system("make")
     os.system("make corels_test")
-    sleep(2)
     
     # Create filename
     if args.outfile != None:

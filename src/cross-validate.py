@@ -64,6 +64,10 @@ def csv_gen(df, path, cols):
     df.to_csv(path_or_buf=path, columns=cols, sep=' ', header=False, index=False)
 
 def run_corels(args, parser):
+    os.system("make")
+    os.system("make corels_test")
+    sleep(2)
+
     ## Check if outfile exists
     final_outfile = corels_test.gen_filename_roc(args, parser, include_val=False).replace("_roc", "_cross-{}".format(args.num_groups))
     final_outfile_roc = final_outfile.replace(".csv", "_roc.csv")
