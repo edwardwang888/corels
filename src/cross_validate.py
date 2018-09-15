@@ -71,12 +71,24 @@ def run_corels(args, parser):
     ## Check if outfile exists
     final_outfile = corels_test.gen_filename_roc(args, parser, include_val=False).replace("_roc", "_cross-{}".format(args.num_groups))
     final_outfile_roc = final_outfile.replace(".csv", "_roc.csv")
-    if check_outfile_roc(final_outfile_roc) == "n" and args.roc:
-        print("File {} contains objective value data.".format(final_outfile))
-        plot_roc(final_outfile_roc)
-        return
+    final_outfile_len = final_outfile_roc.replace("roc", "len")
 
-    check_outfile(final_outfile)
+    # Running boxplot
+    if args.r != None:
+        if check_outfile_roc(final_outfile_roc) == "n":
+            return final_outfile_roc, final_outfile_len
+        else:
+            check_outfile(final_outfile)
+            check_outfile(final_outfile_len)
+
+    # Not running boxplot
+    else:
+        if check_outfile_roc(final_outfile_roc) == "n" and args.roc:
+            print("File {} contains objective value data.".format(final_outfile))
+            plot_roc(final_outfile_roc)
+            return
+
+        check_outfile(final_outfile)
 
     ## Read data
     data = pd.read_csv("../data/{}.out".format(args.data_train), sep=' ', header=None)
@@ -148,7 +160,7 @@ def run_corels(args, parser):
         if args.bound != None:
             cmd += ["-B", "{}".format(args.bound)]
 
-        cmd += ['-o', outfile.name, outfile_roc.name, '--append', os.path.basename(X_train.name).replace(".out", ""), os.path.basename(X_test.name).replace(".out", "")]
+        cmd += ['-o', outfile.name, outfile_roc.name, final_outfile_len, '--append', os.path.basename(X_train.name).replace(".out", ""), os.path.basename(X_test.name).replace(".out", "")]
         
         print(cmd)
         p = subprocess.Popen(cmd, stderr=subprocess.PIPE)
@@ -168,6 +180,8 @@ def run_corels(args, parser):
 
     if args.roc:
         plot_roc(final_outfile_roc)
+
+    return final_outfile_roc, final_outfile_len
 
 
 def get_scores_file(args, name, i):

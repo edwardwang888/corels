@@ -12,7 +12,7 @@ from utils import wpa_objective
 
 failed = 0
 
-def run(r, outfile, outfile_roc, data_train, data_test, falling, wpa, max_num_nodes, b, c, p, ties, random, bound):
+def run(r, outfile, outfile_roc, outfile_len, data_train, data_test, falling, wpa, max_num_nodes, b, c, p, ties, random, bound):
     data_minor = "../data/{}.minor".format(data_train)
     #Start assembling command string
     cmd = "./corels -r {} ".format(r)
@@ -67,6 +67,11 @@ def run(r, outfile, outfile_roc, data_train, data_test, falling, wpa, max_num_no
     for i in range(len(rules)-1):
         # Remove predicition from rules
         cmd1.append(rules[i][:rules[i].find('~')])
+
+    # Write length to file
+    if outfile_len != None:
+        with open(outfile_len, 'ab') as f:
+            f.write("{} ".format(len(rules)-1))
 
     # Calculate objective and ROC
     p = subprocess.Popen(cmd1, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -150,7 +155,7 @@ def parent_parser():
 def main():
     parser = argparse.ArgumentParser(parents=[parent_parser()], description="Run test cases on corels")
     parser.add_argument("data_test", help="Test data (in ../data)")
-    parser.add_argument("-o", help="override default output file names [outfile, outfile_roc]", action="store", nargs=2, dest="outfile")
+    parser.add_argument("-o", help="override default output file names [outfile, outfile_roc, outfile_len]", action="store", nargs=3, dest="outfile")
     parser.add_argument("--append", help="append to file", action="store_true", dest="append")
     args = parser.parse_args()
 
@@ -164,9 +169,11 @@ def main():
     if args.outfile != None:
         outfile = args.outfile[0]
         outfile_roc = args.outfile[1]
+        outfile_len = args.outfile[2]
     else:
         outfile_roc = gen_filename_roc(args, parser)
         outfile = outfile_roc.replace("_roc", "")
+        outfile_len = None
 
     if os.access(outfile_roc, os.F_OK) and args.append == False:
         c = raw_input("File {} already exists. Do you want to run again? (y/N/a) ".format(outfile_roc))
@@ -198,7 +205,7 @@ def main():
     if args.r == None:
         for i in range(iter):
             if r <= args.r_start:
-                run(r, outfile, outfile_roc, args.data_train, args.data_test, args.falling, args.wpa, args.max_num_nodes, args.b, args.c, args.p, args.ties, args.random, args.bound)
+                run(r, outfile, outfile_roc, outfile_len, args.data_train, args.data_test, args.falling, args.wpa, args.max_num_nodes, args.b, args.c, args.p, args.ties, args.random, args.bound)
 
             if args.step == None:
                 r /= 1.0525
@@ -206,14 +213,14 @@ def main():
                 r -= args.step
             
         while r > 0.0000001 and args.step != None:
-            run(r, outfile, outfile_roc, args.data_train, args.data_test, args.falling, args.wpa, args.max_num_nodes, args.b, args.c, args.p, args.ties, args.random, args.bound)
+            run(r, outfile, outfile_roc, outfile_len, args.data_train, args.data_test, args.falling, args.wpa, args.max_num_nodes, args.b, args.c, args.p, args.ties, args.random, args.bound)
             r /= 1.0525
 
         #Run with zero regularity
-        run(0, outfile, outfile_roc, args.data_train, args.data_test, args.falling, args.wpa, args.max_num_nodes, args.b, args.c, args.p, args.ties, args.random, args.bound)
+        run(0, outfile, outfile_roc, outfile_len, args.data_train, args.data_test, args.falling, args.wpa, args.max_num_nodes, args.b, args.c, args.p, args.ties, args.random, args.bound)
 
     else:
-        run(args.r, outfile, outfile_roc, args.data_train, args.data_test, args.falling, args.wpa, args.max_num_nodes, args.b, args.c, args.p, args.ties, args.random, args.bound)
+        run(args.r, outfile, outfile_roc, outfile_len, args.data_train, args.data_test, args.falling, args.wpa, args.max_num_nodes, args.b, args.c, args.p, args.ties, args.random, args.bound)
 
 
     if args.roc:
