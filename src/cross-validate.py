@@ -83,7 +83,14 @@ def run_corels(args, parser):
     outfile = tempfile.NamedTemporaryFile(dir="../data", suffix=".csv")
 
     ## Run cross validation
-    for i in range(args.g, args.num_groups):
+    if args.g != None:
+        start = args.g[0]
+        end = args.g[1] + 1
+    else:
+        start = 0
+        end = args.num_groups
+
+    for i in range(start, end):
         print(i)
         outfile_roc = tempfile.NamedTemporaryFile(dir="../data", suffix="_roc.csv")
 
@@ -234,7 +241,7 @@ def run_baseline_main(args, parser):
 def main():
     parser = argparse.ArgumentParser(description="Perform cross validation")
     parser.add_argument("--val", help="Number of groups to split dataset into", action="store", required=True, type=int, dest="num_groups")
-    parser.add_argument("-g", help="group index to start", action="store", type=int, default=0, dest="g")
+    parser.add_argument("-g", help="group index range to run", action="store", type=int, nargs=2, dest="g")
     subparsers = parser.add_subparsers()
 
     corels_parser = subparsers.add_parser('corels', parents=[corels_test.parent_parser()], help="Run corels")
