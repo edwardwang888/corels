@@ -48,8 +48,8 @@ def run(r, outfile, outfile_roc, outfile_len, data_train, data_test, falling, wp
 
     # Read in rule list from log file
     if p.poll() != 0:
-	global failed
-	failed += 1
+        global failed
+        failed += 1
         return
     start = stdout.find("../logs/")
     end = stdout.find("\n", start)

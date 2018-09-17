@@ -322,37 +322,37 @@ void evaluate_children(CacheTree* tree, Node* parent, tracking_vector<unsigned s
             }
             if (first_run) {
                 lb_array[i] = lookahead_bound;
-		/*
-		if (isnan(lb_array[i])) {
-		    printf("NAN\n");
-		    getchar();
-		}
-		*/
-	    }
+                /*
+                if (isnan(lb_array[i])) {
+                    printf("NAN\n");
+                    getchar();
+                }
+                */
+            }
             // only add node to our datastructures if its children will be viable
             // also add falling constraint
             if (!first_run) {
-		/*
-		printf("After sorting:\n");
+                /*
+                printf("After sorting:\n");
                 for (int i = 0; i < nrules; i++)
-		    fprintf(stderr, "%f ", lb_array[i]);
-		fprintf(stderr, "\n");
-		if (lookahead_bound > lb_array[(int)(start + bound * (nrules - 1 - start))]) {
-		    printf("%f\n", lookahead_bound);
-		    getchar();
-		}
-		if (fetestexcept(FE_ALL_EXCEPT)) {
-		    printf("FP exception\n");
-		    printf("%f\n", lookahead_bound);
-		    printf("%d %d %d %d %d\n", FE_UNDERFLOW, FE_OVERFLOW, FE_INVALID, FE_INEXACT, FE_DIVBYZERO);
-		    // getchar();
-		}
-		if (isnan(lookahead_bound)) {
-		    printf("NAN\n");
-		    getchar();
-		}
-		*/
-		if (lookahead_bound < tree->min_objective() && \
+                    fprintf(stderr, "%f ", lb_array[i]);
+                fprintf(stderr, "\n");
+                if (lookahead_bound > lb_array[(int)(start + bound * (nrules - 1 - start))]) {
+                    printf("%f\n", lookahead_bound);
+                    getchar();
+                }
+                if (fetestexcept(FE_ALL_EXCEPT)) {
+                    printf("FP exception\n");
+                    printf("%f\n", lookahead_bound);
+                    printf("%d %d %d %d %d\n", FE_UNDERFLOW, FE_OVERFLOW, FE_INVALID, FE_INEXACT, FE_DIVBYZERO);
+                    // getchar();
+                }
+                if (isnan(lookahead_bound)) {
+                    printf("NAN\n");
+                    getchar();
+                }
+                */
+                if (lookahead_bound < tree->min_objective() && \
                     lookahead_bound <= lb_array[(int)(start + bound * (nrules - 1 - start))] && \
                     (falling == false || has_falling_constraint(proportion, parent->proportion(), default_proportion))) {
                     double t3 = timestamp();
@@ -386,17 +386,17 @@ void evaluate_children(CacheTree* tree, Node* parent, tracking_vector<unsigned s
             if (i == nrules - 1 && first_run) {
                 first_run = 0;
                 // Replace NAN values with zero
-		// printf("Before sorting:\n");
-		for (int i = 0; i < nrules; i++) {
-		    // fprintf(stderr, "%f ", lb_array[i]);
-		    if (isnan(lb_array[i])) {
-		    	/* printf("NAN\n");
-			getchar(); */
-			lb_array[i] = 0;
-		    }
-		}
-		// fprintf(stderr, "\n");
-		// getchar();
+                // printf("Before sorting:\n");
+                for (int i = 0; i < nrules; i++) {
+                    // fprintf(stderr, "%f ", lb_array[i]);
+                    if (isnan(lb_array[i])) {
+                            /* printf("NAN\n");
+                        getchar(); */
+                        lb_array[i] = 0;
+                    }
+                }
+                // fprintf(stderr, "\n");
+                // getchar();
                 qsort(lb_array, nrules, sizeof(double), compare_doubles);
                 for (int i = nrules - 1; i >= 0; i--) {
                     if (lb_array[i] == 0) {
