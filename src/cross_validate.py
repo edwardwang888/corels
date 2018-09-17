@@ -273,7 +273,7 @@ def get_parser():
 
 
 def main():
-    parser = argparse.ArgumentParser(parents=[get_parser()], help="Perform cross validation")
+    parser = argparse.ArgumentParser(parents=[get_parser()], description="Perform cross validation")
     args = parser.parse_args()
     args.func(args, parser)
 
