@@ -99,7 +99,7 @@ def run(r, outfile, outfile_roc, outfile_len, data_train, data_test, falling, wp
     # print(wpa_objective(scores, y_test))
 
 
-def gen_filename_roc(args, parser, include_val=True):
+def gen_filename_roc(args, parser, include_val=True, include_r=True):
     outfile = args.data_train
     if args.wpa:
         outfile += "_wpa"
@@ -119,7 +119,7 @@ def gen_filename_roc(args, parser, include_val=True):
         outfile += "_R-{}".format(args.random)
     if args.bound != None:
         outfile += "_B-{}".format(args.bound)
-    if args.r != None:
+    if include_r and args.r != None:
         outfile += "_r-{}".format(args.r)
     if include_val and args.data_train != args.data_test:
         outfile += "_val-{}".format(args.data_test)

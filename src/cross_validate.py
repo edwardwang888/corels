@@ -66,7 +66,8 @@ def csv_gen(df, path, cols):
 def run_corels(args, parser):
     os.system("make")
     os.system("make corels_test")
-    sleep(2)
+    if __name__ == "__main__":
+        sleep(2)
 
     ## Check if outfile exists
     final_outfile = corels_test.gen_filename_roc(args, parser, include_val=False).replace("_roc", "_cross-{}".format(args.num_groups))
