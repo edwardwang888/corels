@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 import roc
 from utils import check_outfile, check_outfile_roc, wpa_objective
 
-def run(X_train, y_train, X_test, y_test, outfile, outfile_roc, args, append=False, outfile_scores=None):
+def run(X_train, y_train, X_test, y_test, outfile, outfile_roc, args, append=False, outfile_scores=None, outfile_len=None):
       """ if os.access(outfile_roc, os.F_OK) and args.roc == True and append == False:
             c = raw_input("File {} already exists. Do you want to run again? (y/N/a) ".format(outfile))
             if c.lower() == "y":
@@ -81,6 +81,9 @@ def run(X_train, y_train, X_test, y_test, outfile, outfile_roc, args, append=Fal
                               scores = clf.predict_proba(X_test)[:,1]
                         else:
                               scores = predictor.decision_function(X_test)
+                              if outfile_len != None:
+                                    with open(outfile_len, 'ab') as f:
+                                          f.write("{} ".format(predictor.train_info.shape[0]-1))
 
                         scores_all[i,:] = scores
 
