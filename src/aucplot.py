@@ -1,6 +1,7 @@
 import cross_validate
 import corels_test
 import argparse
+import sys
 import numpy as np
 from sklearn.metrics import auc
 import matplotlib.pyplot as plt
@@ -11,7 +12,15 @@ def run(args, parser):
     len_matrix = np.ndarray(shape=(args.num_groups, len(args.reg)))
     for r in range(len(args.reg)):
         args.r = args.reg[r]
-        outfile_roc, outfile_len = cross_validate.run_corels(args, parser)
+
+        if args.method == "corels":
+            outfile_roc, outfile_len = cross_validate.run_corels(args, parser)
+        elif args.method == "baseline" and args.frl:
+            outfile_roc, outfile_len = cross_validate.run_baseline(args, parser, "frl")
+        else:
+            print("Only falling rule lists is allowed.")
+            sys.exit(1)
+
         with open(outfile_roc, 'rb') as f:
             data = f.readlines()
             for i in range(len(data)/2):

@@ -289,7 +289,7 @@ def get_parser():
     parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument("--val", help="Number of groups to split dataset into", action="store", required=True, type=int, dest="num_groups")
     parser.add_argument("-g", help="group index range to run", action="store", type=int, nargs=2, dest="g")
-    subparsers = parser.add_subparsers()
+    subparsers = parser.add_subparsers(dest="method")
 
     corels_parser = subparsers.add_parser('corels', parents=[corels_test.parent_parser()], help="Run corels")
     corels_parser.set_defaults(func=run_corels)
