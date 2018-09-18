@@ -63,6 +63,16 @@ def plot_roc(outfile_roc):
 def csv_gen(df, path, cols):
     df.to_csv(path_or_buf=path, columns=cols, sep=' ', header=False, index=False)
 
+def get_group_range(args):
+    if args.g != None:
+        start = args.g[0]
+        end = args.g[1] + 1
+    else:
+        start = 0
+        end = args.num_groups
+
+    return start, end
+
 def run_corels(args, parser):
     os.system("make")
     os.system("make corels_test")
@@ -100,13 +110,7 @@ def run_corels(args, parser):
     outfile = tempfile.NamedTemporaryFile(dir="../data", suffix=".csv")
 
     ## Run cross validation
-    if args.g != None:
-        start = args.g[0]
-        end = args.g[1] + 1
-    else:
-        start = 0
-        end = args.num_groups
-
+    start, end = get_group_range(args)
     for i in range(start, end):
         print(i)
         outfile_roc = tempfile.NamedTemporaryFile(dir="../data", suffix="_roc.csv")
@@ -223,7 +227,8 @@ def run_baseline(args, parser, name):
     outfile = tempfile.NamedTemporaryFile(dir="../data", suffix="_{}.csv".format(name))
 
     ## Run cross validation
-    for i in range(args.g, args.num_groups):
+    start, end = get_group_range(args)
+    for i in range(start, end):
         print(i)
         test_rows = range(i*size, (i+1)*size)
         train_rows = range(0, i*size) + range((i+1)*size, data.shape[0])
