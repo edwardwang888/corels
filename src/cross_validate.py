@@ -190,7 +190,7 @@ def run_corels(args, parser):
 
 
 def get_scores_file(args, name, i):
-    outfile_scores = "../data/{}_{}_scores_cross-{}_i-{}.csv".format(args.data_train, name, args.num_groups, i)
+    outfile_scores = "../data/{}_{}_scores_cross-{}_r-{}_i-{}.csv".format(args.data_train, name, args.num_groups, args.r, i)
     if args.binary:
         outfile_scores = outfile_scores.replace(".csv", "_binary.csv")
 
@@ -202,15 +202,32 @@ def run_baseline(args, parser, name):
     final_outfile = args.data_train + "_{}".format(name)
     if args.binary:
         final_outfile += "_binary"
+    if args.r != None:
+        final_outfile += "_r-{}".format(args.r)
     
     final_outfile += "_cross-{}.csv".format(args.num_groups)
     final_outfile_roc = final_outfile.replace(".csv", "_roc.csv")
-    if check_outfile_roc(final_outfile_roc) == "n" and args.roc:
-        print("Outfile: {}".format(final_outfile))
-        plot_roc(final_outfile_roc)
-        return
-    
-    check_outfile(final_outfile)
+
+    if args.r != None:
+        final_outfile_len = final_outfile_roc.replace("roc", "len")
+    else:
+        final_outfile_len = None
+
+    if args.r != None:
+        if check_outfile_roc(final_outfile_roc) == "n":
+            return final_outfile_roc, final_outfile_len
+        else:
+            check_outfile(final_outfile)
+            check_outfile(final_outfile_len)
+
+    else:
+        if check_outfile_roc(final_outfile_roc) == "n" and args.roc:
+            print("Outfile: {}".format(final_outfile))
+            plot_roc(final_outfile_roc)
+            return
+
+        check_outfile(final_outfile)
+
     outfile_scores = get_scores_file(args, name, 0)
     """ if check_outfile_roc(outfile_scores) == "y":
         for i in range(1, args.num_groups):
@@ -240,7 +257,7 @@ def run_baseline(args, parser, name):
 
         outfile_roc = tempfile.NamedTemporaryFile(dir="../data", suffix="_{}_roc.csv".format(name))
         outfile_scores = get_scores_file(args, name, i)
-        baseline.run(X_train, y_train, X_test, y_test, outfile.name, outfile_roc.name, args, append=True, outfile_scores=outfile_scores)
+        baseline.run(X_train, y_train, X_test, y_test, outfile.name, outfile_roc.name, args, append=True, outfile_scores=outfile_scores, outfile_len=final_outfile_len)
         fpr, tpr = roc.find_max_roc(outfile_roc.name)
         roc.write_to_file(fpr, tpr, final_outfile_roc)
         outfile_roc.close()
@@ -253,9 +270,13 @@ def run_baseline(args, parser, name):
     if args.roc:
         plot_roc(final_outfile_roc)
 
+    return final_outfile_roc, final_outfile_len
+
 def run_baseline_main(args, parser):
     os.system("make baseline")
-    sleep(2)
+    if __name__ == "__main__":
+        sleep(2)
+
     if args.logistic:
         run_baseline(args, parser, "logistic")
     if args.rforest:
