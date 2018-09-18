@@ -40,7 +40,11 @@ def run(X_train, y_train, X_test, y_test, outfile, outfile_roc, args, append=Fal
             return
       
       nsamples = len(X_test)
-      iter = 140
+      if args.r == None:
+            iter = 140
+      else:
+            iter = 1
+
       run = True
       scores_all = np.ndarray(shape=(iter, nsamples))
       if outfile_scores != None and os.access(outfile_scores, os.F_OK):
@@ -56,10 +60,14 @@ def run(X_train, y_train, X_test, y_test, outfile, outfile_roc, args, append=Fal
       else:
             print("\nModel: {}".format(outfile[:-4]))
 
-      r = args.r_start
+      if args.r == None:
+            r = args.r_start
+      else:
+            r = args.r
+
       n1 = np.sum(y_test)
       for i in range(iter):
-            if r <= args.r_start:
+            if (args.r == None and r <= args.r_start) or (args.r != None and r == args.r):
                   if run:
                         if "logistic" in outfile:
                               clf = linear_model.LogisticRegression(C=1/r)
@@ -77,7 +85,10 @@ def run(X_train, y_train, X_test, y_test, outfile, outfile_roc, args, append=Fal
                         scores_all[i,:] = scores
 
                   else:
-                        scores = scores_all[i,:]
+                        if args.r == None:
+                              scores = scores_all[i,:]
+                        else:
+                              scores = scores_all
 
                   # Calculate objective
                   initial_obj = n1 * (nsamples - n1)
@@ -130,7 +141,8 @@ def parent_parser():
       parser.add_argument("--rf", help="Run random forests classifier", action="store_true", dest="rforest")
       parser.add_argument("--frl", help="Run falling rule lists classifier", action="store_true", dest="frl")
       parser.add_argument("--roc", help="Plot ROC curve", action="store_true", dest="roc")
-      parser.add_argument("-r", help="starting regularization", type=float, default=1, action="store", dest="r_start")
+      parser.add_argument("-r_start", help="starting regularization", type=float, default=1, action="store", dest="r_start")
+      parser.add_argument("-r", help="single regularization to run", action="store", type=float, dest="r")
       parser.add_argument("-W", help="append text to filename", action="store", dest="text")
       return parser
 
@@ -152,6 +164,8 @@ def main():
       text = ""
       if args.binary:
             text += "_binary"
+      if args.r != None:
+            text += "_r-{}".format(args.r)
       if args.data_train != args.data_test:
             text += "_val-{}".format(args.data_test)
       if args.text != None:
