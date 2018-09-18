@@ -229,12 +229,12 @@ def run_baseline(args, parser, name):
         check_outfile(final_outfile)
 
     outfile_scores = get_scores_file(args, name, 0)
-    """ if check_outfile_roc(outfile_scores) == "y":
+    if check_outfile_roc(outfile_scores) == "y":
         for i in range(1, args.num_groups):
             outfile_scores = get_scores_file(args, name, i)
             if os.access(outfile_scores, os.F_OK):
-                print("Also deleting {}".format(outfile_scores))
-                os.unlink(outfile_scores) """
+                print("Also deleting: {}".format(outfile_scores))
+                os.unlink(outfile_scores)
 
     ## Read data
     data, labels = baseline.get_data(args.data_train, args.binary)
