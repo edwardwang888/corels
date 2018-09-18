@@ -20,7 +20,13 @@ def main():
             aucargs = aucparser.parse_args(row)
             print(aucargs)
             auc_matrix, len_matrix = aucplot.run(aucargs, aucparser)
-            aucplot.errorbar(auc_matrix, len_matrix, ["{} ({})".format(aucargs.title, x) for x in aucargs.reg], fmt=fmt[i], color=colors[i])
+
+            if aucargs.method == "corels":
+                reg = aucargs.reg
+            else:
+                reg = [int(round(1/r)) for r in aucargs.reg]
+
+            aucplot.errorbar(auc_matrix, len_matrix, ["{} ({})".format(aucargs.title, x) for x in reg], fmt=fmt[i], color=colors[i])
             i += 1
 
     plt.xlabel("Model Size")
