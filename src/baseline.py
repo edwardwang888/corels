@@ -74,7 +74,7 @@ def run(X_train, y_train, X_test, y_test, outfile, outfile_roc, args, append=Fal
                         elif "rforest" in outfile:
                               clf = RandomForestClassifier(n_estimators=int(1/r), n_jobs=2)
                         elif "frl" in outfile:
-                              clf = sklearn_wrappers.monotonic_sklearn_fitter(num_steps = int(1/r), min_supp = 5, max_clauses = 2, prior_length_mean = 8, prior_gamma_l_alpha = 1., prior_gamma_l_beta = 0.1, temperature = 1)
+                              clf = sklearn_wrappers.monotonic_sklearn_fitter(num_steps = int(1/r), min_supp = args.min_supp, max_clauses = args.max_clauses, prior_length_mean = 8, prior_gamma_l_alpha = 1., prior_gamma_l_beta = 0.1, temperature = 1)
                         
                         predictor = clf.fit(X_train, y_train)
                         if "frl" not in outfile:
@@ -143,6 +143,10 @@ def parent_parser():
       parser.add_argument("--log", help="Run logistic regression", action="store_true", dest="logistic")
       parser.add_argument("--rf", help="Run random forests classifier", action="store_true", dest="rforest")
       parser.add_argument("--frl", help="Run falling rule lists classifier", action="store_true", dest="frl")
+      parser.add_argument("--min_supp", help="min support for FRL",
+action="store", type=float, default=5, dest="min_supp")
+      parser.add_argument("--max_clauses", help="max clauses for FRL",
+action="store", type=int, default=2, dest="max_clauses")
       parser.add_argument("--roc", help="Plot ROC curve", action="store_true", dest="roc")
       parser.add_argument("-r_start", help="starting regularization", type=float, default=1, action="store", dest="r_start")
       parser.add_argument("-r", help="single regularization to run", action="store", type=float, dest="r")
