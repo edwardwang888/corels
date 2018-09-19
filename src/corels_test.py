@@ -69,9 +69,10 @@ def run(r, outfile, outfile_roc, outfile_len, data_train, data_test, falling, wp
         cmd1.append(rules[i][:rules[i].find('~')])
 
     # Write length to file
+    rulelist_len = len(rules)-1
     if outfile_len != None:
         with open(outfile_len, 'ab') as f:
-            f.write("{} ".format(len(rules)-1))
+            f.write("{} ".format(rulelist_len))
 
     # Calculate objective and ROC
     p = subprocess.Popen(cmd1, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -80,7 +81,7 @@ def run(r, outfile, outfile_roc, outfile_len, data_train, data_test, falling, wp
     print("corels_test.c: " + stderr)
 
     objective = stdout[:stdout.find('\n')]
-    output = "{} {}".format(r, objective)
+    output = "{} {} {}".format(r, objective, rulelist_len)
     print(cmd1)
     f = open(outfile, 'ab')
     f.write(output + "\n")
