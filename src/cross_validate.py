@@ -86,20 +86,20 @@ def run_corels(args, parser):
 
     # Running boxplot
     if args.r != None:
-        if check_outfile_roc(final_outfile_roc) == "n":
+        if check_outfile_roc(final_outfile_roc, args.override) == "n":
             return final_outfile_roc, final_outfile_len
         else:
-            check_outfile(final_outfile)
-            check_outfile(final_outfile_len)
+            check_outfile(final_outfile, args.override)
+            check_outfile(final_outfile_len, args.override)
 
     # Not running boxplot
     else:
-        if check_outfile_roc(final_outfile_roc) == "n" and args.roc:
+        if check_outfile_roc(final_outfile_roc, args.override) == "n" and args.roc:
             print("File {} contains objective value data.".format(final_outfile))
             plot_roc(final_outfile_roc)
             return
 
-        check_outfile(final_outfile)
+        check_outfile(final_outfile, args.override)
 
     ## Read data
     data = pd.read_csv("../data/{}.out".format(args.data_train), sep=' ', header=None)
@@ -214,22 +214,22 @@ def run_baseline(args, parser, name):
         final_outfile_len = None
 
     if args.r != None:
-        if check_outfile_roc(final_outfile_roc) == "n":
+        if check_outfile_roc(final_outfile_roc, args.override) == "n":
             return final_outfile_roc, final_outfile_len
         else:
-            check_outfile(final_outfile)
-            check_outfile(final_outfile_len)
+            check_outfile(final_outfile, args.override)
+            check_outfile(final_outfile_len, args.override)
 
     else:
-        if check_outfile_roc(final_outfile_roc) == "n" and args.roc:
+        if check_outfile_roc(final_outfile_roc, args.override) == "n" and args.roc:
             print("Outfile: {}".format(final_outfile))
             plot_roc(final_outfile_roc)
             return
 
-        check_outfile(final_outfile)
+        check_outfile(final_outfile, args.override)
 
     outfile_scores = get_scores_file(args, name, 0)
-    if check_outfile_roc(outfile_scores) == "y":
+    if check_outfile_roc(outfile_scores, args.override) == "y":
         for i in range(1, args.num_groups):
             outfile_scores = get_scores_file(args, name, i)
             if os.access(outfile_scores, os.F_OK):
@@ -289,6 +289,8 @@ def get_parser():
     parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument("--val", help="Number of groups to split dataset into", action="store", required=True, type=int, dest="num_groups")
     parser.add_argument("-g", help="group index range to run", action="store", type=int, nargs=2, dest="g")
+    parser.add_argument("-O", help="override existing files",
+action="store_true", dest="override")
     subparsers = parser.add_subparsers(dest="method")
 
     corels_parser = subparsers.add_parser('corels', parents=[corels_test.parent_parser()], help="Run corels")

@@ -2,9 +2,13 @@ import os
 import sys
 import numpy as np
 
-def check_outfile(outfile):
+def check_outfile(outfile, override=False):
     if os.access(outfile, os.F_OK):
-        c = raw_input("File {} already exists. Are you sure you want to continue? (y/N/a) ".format(outfile))
+        if override == False:
+            c = raw_input("File {} already exists. Are you sure you want to continue? (y/N/a) ".format(outfile))
+        else:
+            c = "y"
+
         if c.lower() == "y":
             os.unlink(outfile)
         elif c.lower() == "a":
@@ -14,9 +18,13 @@ def check_outfile(outfile):
 
         return c.lower()
 
-def check_outfile_roc(outfile_roc):
+def check_outfile_roc(outfile_roc, override=False):
     if os.access(outfile_roc, os.F_OK):
-        c = raw_input("File {} already exists. Do you want to run again? (y/N/a) ".format(outfile_roc))
+        if override == False:
+            c = raw_input("File {} already exists. Do you want to run again? (y/N/a) ".format(outfile_roc))
+        else:
+            c = "y"
+
         if c.lower() == "y":
             os.unlink(outfile_roc)
             return "y"
