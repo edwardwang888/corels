@@ -89,7 +89,7 @@ void evaluate_children(CacheTree* tree, Node* parent, tracking_vector<unsigned s
 
     int total_zeros = tree->label(0).support;
     int total_ones = nsamples - total_zeros;
-    int wpa_max = total_zeros * total_ones;
+    int wpa_max = total_ones * a(total_zeros, x);
 
     // nrules is actually the number of rules + 1 (since it includes the default rule), so the maximum
     // value of i is nrules - 1 instead of nrules

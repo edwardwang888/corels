@@ -269,7 +269,7 @@ int main(int argc, char *argv[]) {
         p = (PermutationMap*) null_pmap;
     }
 
-    CacheTree* tree = new CacheTree(nsamples, nrules, c, rules, labels, meta, ablation, calculate_size, type, wpa);
+    CacheTree* tree = new CacheTree(nsamples, nrules, c, rules, labels, meta, ablation, calculate_size, type, wpa, x);
     if (verbosity.count("progress"))
         printf("%s", run_type);
     // runs our algorithm

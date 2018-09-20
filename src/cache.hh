@@ -92,7 +92,7 @@ class CacheTree {
     CacheTree() {};
     CacheTree(size_t nsamples, size_t nrules, double c, rule_t *rules,
               rule_t *labels, rule_t *minority, int ablation,
-              bool calculate_size, char const *type, bool wpa = false);
+              bool calculate_size, char const *type, bool wpa = false, int x = 1);
     ~CacheTree();
 
     Node* construct_node(unsigned short new_rule, size_t nrules,
@@ -117,6 +117,7 @@ class CacheTree {
     inline double c() const;
     inline Node* root() const;
     inline bool wpa() const;
+    inline int x() const;
 
     void update_min_objective(double objective);
     void update_opt_rulelist(tracking_vector<unsigned short, DataStruct::Tree>& parent_prefix,
@@ -158,6 +159,7 @@ class CacheTree {
     void gc_helper(Node* node);
 
     bool wpa_;
+    int x_;
 };
 
 inline unsigned short Node::id() const {
@@ -322,6 +324,10 @@ inline bool CacheTree::calculate_size() const {
 
 inline bool CacheTree::wpa() const {
     return wpa_;
+}
+
+inline int CacheTree::x() const {
+    return x_;
 }
 
 /*
