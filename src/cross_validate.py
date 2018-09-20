@@ -89,6 +89,7 @@ def run_corels(args, parser):
         if check_outfile_roc(final_outfile_roc, args.override) == "n":
             return final_outfile_roc, final_outfile_len
         else:
+            args.override = True
             check_outfile(final_outfile, args.override)
             check_outfile(final_outfile_len, args.override)
 
@@ -219,6 +220,7 @@ def run_baseline(args, parser, name):
         if check_outfile_roc(final_outfile_roc, args.override) == "n":
             return final_outfile_roc, final_outfile_len
         else:
+            args.override = True
             check_outfile(final_outfile, args.override)
             check_outfile(final_outfile_len, args.override)
 
