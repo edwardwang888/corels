@@ -10,7 +10,7 @@ def main():
     args = parser.parse_args()
 
     aucparser = aucplot.get_parser()
-    colors = ['b','g','r','o','y']
+    colors = ['b','g','r','m','y']
     fmt = ['o','d','^','p','s']
     with open(args.file, 'rb') as csvfile:
         csvreader = csv.reader(csvfile, delimiter=' ')
