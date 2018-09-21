@@ -168,6 +168,8 @@ def run_corels(args, parser):
             cmd += ["-B", "{}".format(args.bound)]
         if args.x != None:
             cmd += ["-x", "{}".format(args.x)]
+        if args.e != None:
+            cmd += ["-e", "{}".format(args.e)]
 
         cmd += ['-o', outfile.name, outfile_roc.name, final_outfile_len, '--append', os.path.basename(X_train.name).replace(".out", ""), os.path.basename(X_test.name).replace(".out", "")]
         

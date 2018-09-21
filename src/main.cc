@@ -344,7 +344,7 @@ int main(int argc, char *argv[]) {
     rule_vand(ones, captured, ones_label.truthtable, nsamples, &num_ones);
     proportion = (double)num_ones/ncaptured;
     update_scores(scores, nsamples, captured, wpa, r_list.size(), proportion);
-    wpa_obj = wpa_objective(scores, labels_int, wpa_max, nsamples);
+    wpa_obj = wpa_objective(scores, labels_int, wpa_max, nsamples, 1);
     /**********************
     *** END SANITY CHECK **
     ***********************/

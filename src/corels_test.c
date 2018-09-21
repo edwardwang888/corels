@@ -7,10 +7,17 @@
 int main(int argc, char *argv[])
 {
     int wpa = 0;
+    int e = 1;
     int c;
-    while ((c = getopt(argc, argv, "w")) != -1) {
-        if (c == 'w')
-            wpa = 1;
+    while ((c = getopt(argc, argv, "we:")) != -1) {
+        switch (c) {
+            case 'w':
+                wpa = 1;
+                break;
+            case 'e':
+                e = atoi(optarg);
+                break;
+        }
     }
     
     int nrules, nsamples, nlabels, nsamples_chk;
@@ -64,7 +71,10 @@ int main(int argc, char *argv[])
 
     // Calculate objective
     int wpa_max = labels[0].support * labels[1].support;
-    double wpa_obj = wpa_objective(scores, labels_int, wpa_max, nsamples);
+    for (int i = 0; i < e - 1; i++)
+        wpa_max *= labels[0].support;
+
+    double wpa_obj = wpa_objective(scores, labels_int, wpa_max, nsamples, e);
     printf("%f\n", wpa_obj);
 
     // Print scores

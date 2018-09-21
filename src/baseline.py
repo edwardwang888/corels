@@ -94,15 +94,29 @@ def run(X_train, y_train, X_test, y_test, outfile, outfile_roc, args, append=Fal
                               scores = scores_all
 
                   # Calculate objective
-                  initial_obj = n1 * (nsamples - n1)
+                  wpa_max = n1 * (nsamples - n1)
+                  if args.e != None:
+                        for i in range(args.e - 1):
+                              wpa_max *= (nsamples - n1)
+
                   score_string = ""
                   label_string = ""
                   for i in range(nsamples):
                         score_string += "{} ".format(scores[i])
                         label_string += "{} ".format(int(y_test[i]))
                   
-                  p = subprocess.Popen("./baseline {} {} {} ".format(outfile, initial_obj, r) + score_string + label_string, shell=True)
-                  p.wait()
+                  cmd = "./baseline -m {} ".format(wpa_max)
+                  if args.e != None:
+                        cmd += "-e {} ".format(args.e)
+
+                  p = subprocess.Popen(cmd + score_string + label_string, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+                  wpa_obj, stderr = p.communicate()
+                  print("baseline.c: " + stderr)
+
+                  output = "{} {}".format(r, wpa_obj)
+                  print(output)
+                  with open(outfile, 'ab') as f:
+                        f.write(output + "\n")
 
                   # Calculate ROC
                   fpr, tpr, thresholds = metrics.roc_curve(y_test, scores)
@@ -150,6 +164,7 @@ action="store", type=int, default=2, dest="max_clauses")
       parser.add_argument("--roc", help="Plot ROC curve", action="store_true", dest="roc")
       parser.add_argument("-r_start", help="starting regularization", type=float, default=1, action="store", dest="r_start")
       parser.add_argument("-r", help="single regularization to run", action="store", type=float, dest="r")
+      parser.add_argument("-e", help="use different a() function when calculating test objective", action="store", type=int, dest="e")
       parser.add_argument("-W", help="append text to filename", action="store", dest="text")
       return parser
 
