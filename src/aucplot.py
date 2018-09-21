@@ -3,6 +3,7 @@ import corels_test
 import argparse
 import sys
 import numpy as np
+import pandas as pd
 from sklearn.metrics import auc
 import matplotlib.pyplot as plt
 
@@ -14,20 +15,16 @@ def run(args, parser):
         args.r = args.reg[r]
 
         if args.method == "corels":
-            outfile_roc, outfile_len = cross_validate.run_corels(args, parser)
+            outfile_all, outfile_len = cross_validate.run_corels(args, parser)
         elif args.method == "baseline" and args.frl:
-            outfile_roc, outfile_len = cross_validate.run_baseline(args, parser, "frl")
+            outfile_all, outfile_len = cross_validate.run_baseline(args, parser, "frl")
         else:
             print("Only falling rule lists is allowed.")
             sys.exit(1)
 
-        with open(outfile_roc, 'rb') as f:
-            data = f.readlines()
-            for i in range(len(data)/2):
-                fpr = np.genfromtxt([data[2*i].rstrip()])
-                tpr = np.genfromtxt([data[2*i+1].rstrip()])
-                roc_auc = auc(fpr, tpr)
-                auc_matrix[i,r] = roc_auc
+        obj = pd.read_csv(outfile_all, sep=' ', header=None)
+        for i in range(obj.shape[0]):
+            auc_matrix[i,r] = obj.iloc[i,1]
 
         len_matrix[:,r] = np.fromfile(outfile_len, dtype=int, sep=" ")
 

@@ -83,11 +83,12 @@ def run_corels(args, parser):
     final_outfile = corels_test.gen_filename_roc(args, parser, include_val=False).replace("_roc", "_cross-{}".format(args.num_groups))
     final_outfile_roc = final_outfile.replace(".csv", "_roc.csv")
     final_outfile_len = final_outfile_roc.replace("roc", "len")
+    final_outfile_all = final_outfile_roc.replace("roc", "all")
 
     # Running boxplot
     if args.r != None:
-        if check_outfile_roc(final_outfile_roc, args.override) == "n":
-            return final_outfile_roc, final_outfile_len
+        if check_outfile_roc(final_outfile_all, args.override) == "n":
+            return final_outfile_all, final_outfile_len
         else:
             args.override = True
             check_outfile(final_outfile, args.override)
@@ -183,13 +184,15 @@ def run_corels(args, parser):
     ## Average runs and output
     csv = pd.read_csv(outfile.name, sep=' ', header=None)
     csv.groupby(0).mean().to_csv(final_outfile, sep=' ', header=False, index=True)
+    if args.r != None:
+        csv.to_csv(final_outfile_all, sep=' ', header=False, index=False)
 
     print("Failed: {}".format(failed))
 
     if args.roc:
         plot_roc(final_outfile_roc)
 
-    return final_outfile_roc, final_outfile_len
+    return final_outfile_all, final_outfile_len
 
 
 def get_scores_file(args, name, i):
@@ -213,12 +216,14 @@ def run_baseline(args, parser, name):
 
     if args.r != None:
         final_outfile_len = final_outfile_roc.replace("roc", "len")
+        final_outfile_all = final_outfile_roc.replace("roc", "all")
     else:
         final_outfile_len = None
+        final_outfile_all = None
 
     if args.r != None:
-        if check_outfile_roc(final_outfile_roc, args.override) == "n":
-            return final_outfile_roc, final_outfile_len
+        if check_outfile_roc(final_outfile_all, args.override) == "n":
+            return final_outfile_all, final_outfile_len
         else:
             args.override = True
             check_outfile(final_outfile, args.override)
@@ -270,11 +275,13 @@ def run_baseline(args, parser, name):
     ## Average runs and output
     csv = pd.read_csv(outfile.name, sep=' ', header=None)
     csv.groupby(0).mean().to_csv(final_outfile, sep=' ', header=False, index=True)
+    if final_outfile_all != None:
+        csv.to_csv(final_outfile_all, sep=' ', header=False, index=False)
 
     if args.roc:
         plot_roc(final_outfile_roc)
 
-    return final_outfile_roc, final_outfile_len
+    return final_outfile_all, final_outfile_len
 
 def run_baseline_main(args, parser):
     os.system("make baseline")
