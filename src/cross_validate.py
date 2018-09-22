@@ -216,6 +216,8 @@ def run_baseline(args, parser, name):
         final_outfile += "_binary"
     if args.r != None:
         final_outfile += "_r-{}".format(args.r)
+    if args.e != None:
+        final_outfile += "_e-{}".format(args.e)
     
     final_outfile += "_cross-{}.csv".format(args.num_groups)
     final_outfile_roc = final_outfile.replace(".csv", "_roc.csv")

@@ -127,6 +127,8 @@ def gen_filename_roc(args, parser, include_val=True, include_r=True):
         outfile += "_B-{}".format(args.bound)
     if args.x != None:
         outfile += "_x-{}".format(args.x)
+    if args.e != None:
+        outfile += "_e-{}".format(args.e)
     if include_r and args.r != None:
         outfile += "_r-{}".format(args.r)
     if include_val and args.data_train != args.data_test:

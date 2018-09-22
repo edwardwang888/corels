@@ -188,6 +188,8 @@ def main():
             text += "_binary"
       if args.r != None:
             text += "_r-{}".format(args.r)
+      if args.e != None:
+            text += "_e-{}".format(args.e)
       if args.data_train != args.data_test:
             text += "_val-{}".format(args.data_test)
       if args.text != None:
