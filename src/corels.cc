@@ -263,7 +263,7 @@ void evaluate_children(CacheTree* tree, Node* parent, tracking_vector<unsigned s
 
             if (tree->wpa()) {
                 // int support = tree->rule(i).support;
-                objective = parent->objective() - c1 * a(d0, x) + c * total_ones * total_zeros;
+                objective = parent->objective() - c1 * a(d0, x) + c * wpa_max;
                 if (ties) {
                     //objective += parent->default_objective();
                     //objective -= ties * 0.5 * (count_greater(captured, num_captured, tree->label(1).truthtable, nsamples) + count_greater(not_captured, num_not_captured, tree->label(1).truthtable, nsamples));
@@ -316,7 +316,7 @@ void evaluate_children(CacheTree* tree, Node* parent, tracking_vector<unsigned s
                 rule_vand(total_not_captured_ones, total_not_captured, tree->label(1).truthtable, nsamples, &r1);
                 // r1 = num_parent_not_captured - r0;
                 // int support = tree->rule(i).support;
-                lookahead_bound = objective - r1 * a(r0, x) + c * total_zeros * total_ones;
+                lookahead_bound = objective - r1 * a(r0, x) + c * wpa_max;
                 // if (ties)
                 //     lookahead_bound -= ties * 0.5 * (count_greater(total_not_captured_ones, r1, tree->label(1).truthtable, nsamples) + count_greater(total_not_captured_zeroes, r0, tree->label(1).truthtable, nsamples));
             }
