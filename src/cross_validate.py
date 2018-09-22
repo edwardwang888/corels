@@ -9,7 +9,6 @@ import matplotlib.pyplot as plt
 from scipy import interp
 from sklearn.metrics import auc
 import csv
-import subprocess
 import os
 import sys
 from time import sleep
@@ -141,43 +140,12 @@ def run_corels(args, parser):
         csv_gen(labels, y_test.name, test_cols)
         csv_gen(labels, y_train.name, train_cols)
         
-        cmd = ['python', 'corels_test.py']
-        if args.r_start != parser.get_default('r_start') and i == args.g:
-            cmd += ['-r_start', "{}".format(args.r_start)]
-        if args.r != None:
-            cmd += ['-r', "{}".format(args.r)]
-        if args.b:
-            cmd.append('-b')
-        if args.c != None:
-            cmd += ['-c', "{}".format(args.c)]
-        if args.p != None:
-            cmd += ['-p', "{}".format(args.p)]
-        if args.falling:
-            cmd.append('-d')
-        if args.wpa:
-            cmd.append('-w')
-        if args.step != None:
-            cmd += ['-s', "{}".format(args.step)]
-        if args.max_num_nodes != None:
-            cmd += ['-n', "{}".format(args.max_num_nodes)]
-        if args.ties != None:
-            cmd += ['-t', "{}".format(args.ties)]
-        if args.random != None:
-            cmd += ['-R', "{}".format(args.random)]
-        if args.bound != None:
-            cmd += ["-B", "{}".format(args.bound)]
-        if args.x != None:
-            cmd += ["-x", "{}".format(args.x)]
-        if args.e != None:
-            cmd += ["-e", "{}".format(args.e)]
-
-        cmd += ['-o', outfile.name, outfile_roc.name, final_outfile_len, '--append', os.path.basename(X_train.name).replace(".out", ""), os.path.basename(X_test.name).replace(".out", "")]
-        
-        print(cmd)
-        p = subprocess.Popen(cmd, stderr=subprocess.PIPE)
-        stderr = p.communicate()[1]
         global failed
-        failed += int(stderr)
+        print("args.data_train: " + args.data_train)
+        data_train_save = args.data_train
+        args.data_train = os.path.basename(X_train.name).replace(".out", "")
+        failed += corels_test.main(args=args, data_test=os.path.basename(X_test.name).replace(".out", ""), outfile=[outfile.name, outfile_roc.name, final_outfile_len], append=True)
+        args.data_train = data_train_save
 
         fpr, tpr = roc.find_max_roc(outfile_roc.name)
         roc.write_to_file(fpr, tpr, final_outfile_roc)

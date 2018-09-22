@@ -164,12 +164,17 @@ def parent_parser():
     parser.add_argument("-e", help="use different a() function when calculating test objective", type=int, action="store", dest="e")
     return parser
 
-def main():
+def main(args=None, data_test=None, outfile=None, append=False):
     parser = argparse.ArgumentParser(parents=[parent_parser()], description="Run test cases on corels")
     parser.add_argument("data_test", help="Test data (in ../data)")
     parser.add_argument("-o", help="override default output file names [outfile, outfile_roc, outfile_len]", action="store", nargs=3, dest="outfile")
     parser.add_argument("--append", help="append to file", action="store_true", dest="append")
-    args = parser.parse_args()
+    if args == None:
+        args = parser.parse_args()
+    else:
+        args.data_test = data_test
+        args.outfile = outfile
+        args.append = append
 
     if args.data_test == None:
         args.data_test = args.data_train
@@ -239,7 +244,7 @@ def main():
         roc.plot(outfile_roc)
         roc.show()
 
-    sys.stderr.write("{}".format(failed))
+    return failed
    
 
 if __name__ == "__main__":
