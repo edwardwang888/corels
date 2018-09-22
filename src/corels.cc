@@ -14,8 +14,8 @@ bool has_falling_constraint(double proportion, double parent_proportion, double 
     return (parent_proportion - 0 < 0.000000001 || parent_proportion > proportion) && proportion > default_proportion;
 }
 
-int a(int base, int pow) {
-    int value = 1;
+unsigned long long a(int base, int pow) {
+    unsigned long long value = 1;
     for (int i = 0; i < pow; i++)
         value *= base;
     return value;
@@ -89,7 +89,7 @@ void evaluate_children(CacheTree* tree, Node* parent, tracking_vector<unsigned s
 
     int total_zeros = tree->label(0).support;
     int total_ones = nsamples - total_zeros;
-    int wpa_max = total_ones * a(total_zeros, x);
+    unsigned long long wpa_max = total_ones * a(total_zeros, x);
 
     // nrules is actually the number of rules + 1 (since it includes the default rule), so the maximum
     // value of i is nrules - 1 instead of nrules

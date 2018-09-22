@@ -70,12 +70,12 @@ int main(int argc, char *argv[])
         labels_int[i] = (rule_isset(labels[1].truthtable, nsamples-i-1) != 0);
 
     // Calculate objective
-    int wpa_max = labels[0].support * labels[1].support;
+    unsigned long long wpa_max = labels[0].support * labels[1].support;
     for (int i = 0; i < e - 1; i++)
         wpa_max *= labels[0].support;
 
     double wpa_obj = wpa_objective(scores, labels_int, wpa_max, nsamples, e);
-    printf("%f\n", wpa_obj);
+    printf("%1.40f\n", wpa_obj);
 
     // Print scores
     for (int i = 0; i < nsamples; i++)

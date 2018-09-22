@@ -7,7 +7,7 @@
 int main(int argc, char *argv[])
 {
     int e = 1;
-    int wpa_max = 0;
+    unsigned long long wpa_max = 0;
     int c;
     while ((c = getopt(argc, argv, "e:m:")) != -1) {
         switch (c) {
@@ -15,7 +15,8 @@ int main(int argc, char *argv[])
                 e = atoi(optarg);
                 break;
             case 'm':
-                wpa_max = atoi(optarg);
+                wpa_max = atoll(optarg);
+                fprintf(stderr, "wpa_max: %llu\n", wpa_max);
                 break;
         }
     }
@@ -51,5 +52,5 @@ int main(int argc, char *argv[])
  */
 
     double wpa = wpa_objective(z, y, wpa_max, nsamples, e);
-    printf("%f", wpa);
+    printf("%1.40f", wpa);
 }

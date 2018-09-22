@@ -20,7 +20,7 @@ double a(double base, int pow)
     return value;
 }
 
-double wpa_objective(double *z, int *y, int wpa_max, int nsamples, int e)
+double wpa_objective(double *z, int *y, unsigned long long wpa_max, int nsamples, int e)
 {
     fprintf(stderr, "Calling wpa_objective\n");
     double wpa = 0;

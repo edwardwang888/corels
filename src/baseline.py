@@ -105,7 +105,8 @@ def run(X_train, y_train, X_test, y_test, outfile, outfile_roc, args, append=Fal
                         score_string += "{} ".format(scores[i])
                         label_string += "{} ".format(int(y_test[i]))
                   
-                  cmd = "./baseline -m {} ".format(wpa_max)
+                  print("wpa_max: {:f}".format(wpa_max))
+                  cmd = "./baseline -m {:f} ".format(wpa_max)
                   if args.e != None:
                         cmd += "-e {} ".format(args.e)
 
