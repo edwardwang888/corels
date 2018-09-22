@@ -206,6 +206,10 @@ def get_scores_file(args, name, i):
 
 
 def run_baseline(args, parser, name):
+    os.system("make baseline")
+    if __name__ == "__main__":
+        sleep(2)
+
     ## Check if outfile exists
     final_outfile = args.data_train + "_{}".format(name)
     if args.binary:
