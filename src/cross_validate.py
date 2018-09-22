@@ -233,9 +233,7 @@ def run_baseline(args, parser, name):
         if check_outfile_roc(final_outfile_all, args.override) == "n":
             return final_outfile_all, final_outfile_len
         else:
-            args.override = True
-            check_outfile(final_outfile, args.override)
-            check_outfile(final_outfile_len, args.override)
+            check_outfile(final_outfile, override=True)
 
     else:
         if check_outfile_roc(final_outfile_roc, args.override) == "n" and args.roc:
@@ -247,6 +245,7 @@ def run_baseline(args, parser, name):
 
     outfile_scores = get_scores_file(args, name, 0)
     if check_outfile_roc(outfile_scores, args.override) == "y":
+        check_outfile(final_outfile_len, override=True)
         for i in range(1, args.num_groups):
             outfile_scores = get_scores_file(args, name, i)
             if os.access(outfile_scores, os.F_OK):
