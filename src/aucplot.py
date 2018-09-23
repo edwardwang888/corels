@@ -22,6 +22,8 @@ def run(args, parser):
             print("Only falling rule lists is allowed.")
             sys.exit(1)
 
+        print("outfile_all: " + outfile_all)
+        print("outfile_len: " + outfile_len)
         obj = pd.read_csv(outfile_all, sep=' ', header=None)
         for i in range(obj.shape[0]):
             auc_matrix[i,r] = obj.iloc[i,1]
