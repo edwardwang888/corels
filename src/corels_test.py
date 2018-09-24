@@ -12,7 +12,7 @@ from utils import wpa_objective
 
 failed = 0
 
-def run(r, outfile, outfile_roc, outfile_len, data_train, data_test, falling, wpa, max_num_nodes, b, c, p, ties, random, bound, x, e):
+def run(r, outfile, outfile_roc, outfile_len, data_train, data_test, falling, wpa, max_num_nodes, b, c, p, ties, random, bound, x, e, i):
     data_minor = "../data/{}.minor".format(data_train)
     #Start assembling command string
     cmd = "./corels -r {} ".format(r)
@@ -28,6 +28,8 @@ def run(r, outfile, outfile_roc, outfile_len, data_train, data_test, falling, wp
         cmd = cmd + '-w '
     if max_num_nodes != None:
         cmd += "-n {} ".format(max_num_nodes)
+    if i != None:
+        cmd += "-i {} ".format(i)
     if ties != None:
         cmd += "-t {} ".format(ties)
     if random != None:
@@ -157,6 +159,7 @@ def parent_parser():
     parser.add_argument("-W", help="add text to file name", action="store", dest="text")
     parser.add_argument("-s", help="regularization step", action="store", type=float, dest="step")
     parser.add_argument("-n", help="maximum number of nodes (default 100000)", type=int, action="store", dest="max_num_nodes")
+    parser.add_argument("-i", help="maximum iterations to run", type=int, action="store", dest="i")
     parser.add_argument("-t", help="optimize with ties", type=float, action="store", dest="ties")
     parser.add_argument("-R", help="random search", type=float, action="store", dest="random")
     parser.add_argument("-B", help="lower bound threshold", type=float, action="store", dest="bound")
@@ -222,7 +225,7 @@ def main(args=None, data_test=None, outfile=None, append=False):
     if args.r == None:
         for i in range(iter):
             if r <= args.r_start:
-                run(r, outfile, outfile_roc, outfile_len, args.data_train, args.data_test, args.falling, args.wpa, args.max_num_nodes, args.b, args.c, args.p, args.ties, args.random, args.bound, args.x, args.e)
+                run(r, outfile, outfile_roc, outfile_len, args.data_train, args.data_test, args.falling, args.wpa, args.max_num_nodes, args.b, args.c, args.p, args.ties, args.random, args.bound, args.x, args.e, args.i)
 
             if args.step == None:
                 r /= 1.0525
@@ -230,14 +233,14 @@ def main(args=None, data_test=None, outfile=None, append=False):
                 r -= args.step
             
         while r > 0.0000001 and args.step != None:
-            run(r, outfile, outfile_roc, outfile_len, args.data_train, args.data_test, args.falling, args.wpa, args.max_num_nodes, args.b, args.c, args.p, args.ties, args.random, args.bound, args.x, args.e)
+            run(r, outfile, outfile_roc, outfile_len, args.data_train, args.data_test, args.falling, args.wpa, args.max_num_nodes, args.b, args.c, args.p, args.ties, args.random, args.bound, args.x, args.e, args.i)
             r /= 1.0525
 
         #Run with zero regularity
-        run(0, outfile, outfile_roc, outfile_len, args.data_train, args.data_test, args.falling, args.wpa, args.max_num_nodes, args.b, args.c, args.p, args.ties, args.random, args.bound, args.x, args.e)
+        run(0, outfile, outfile_roc, outfile_len, args.data_train, args.data_test, args.falling, args.wpa, args.max_num_nodes, args.b, args.c, args.p, args.ties, args.random, args.bound, args.x, args.e, args.i)
 
     else:
-        run(args.r, outfile, outfile_roc, outfile_len, args.data_train, args.data_test, args.falling, args.wpa, args.max_num_nodes, args.b, args.c, args.p, args.ties, args.random, args.bound, args.x, args.e)
+        run(args.r, outfile, outfile_roc, outfile_len, args.data_train, args.data_test, args.falling, args.wpa, args.max_num_nodes, args.b, args.c, args.p, args.ties, args.random, args.bound, args.x, args.e, args.i)
 
 
     if args.roc:
