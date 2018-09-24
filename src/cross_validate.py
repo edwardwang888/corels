@@ -198,10 +198,8 @@ def run_baseline(args, parser, name):
         final_outfile_all = None
 
     if args.r != None:
-        if check_outfile_roc(final_outfile_all, args.override) == "n":
-            return final_outfile_all, final_outfile_len
-        else:
-            check_outfile(final_outfile, override=True)
+        check_outfile(final_outfile_all, override=True)
+        check_outfile(final_outfile, override=True)
 
     else:
         if check_outfile_roc(final_outfile_roc, args.override) == "n" and args.roc:
