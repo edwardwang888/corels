@@ -81,7 +81,7 @@ def run_corels(args, parser):
     ## Check if outfile exists
     final_outfile = corels_test.gen_filename_roc(args, parser, include_val=False).replace("_roc", "_cross-{}".format(args.num_groups))
     final_outfile_roc = final_outfile.replace(".csv", "_roc.csv")
-    final_outfile_len = final_outfile.replace("_e-{}".format(args.e), "").replace("roc", "len")
+    final_outfile_len = final_outfile_roc.replace("_e-{}".format(args.e), "").replace("roc", "len")
     final_outfile_all = final_outfile_roc.replace("roc", "all")
 
     # Running boxplot
