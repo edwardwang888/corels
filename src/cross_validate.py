@@ -132,8 +132,12 @@ def run_corels(args, parser):
         os.unlink(y_test.name)
         y_test.name = X_test.name.replace(".out", ".label")
 
-        test_cols = [0] + range(i*size + 1, (i+1)*size + 1)
-        train_cols = range(0, i*size + 1) + range((i+1)*size + 1, data.shape[1])
+        if args.num_groups != 1:
+            test_cols = [0] + range(i*size + 1, (i+1)*size + 1)
+            train_cols = range(0, i*size + 1) + range((i+1)*size + 1, data.shape[1])
+        else:
+            test_cols = range(data.shape[1])
+            train_cols = range(data.shape[1])
 
         csv_gen(data, X_test.name, test_cols)
         csv_gen(data, X_train.name, train_cols)
@@ -229,8 +233,12 @@ def run_baseline(args, parser, name):
     start, end = get_group_range(args)
     for i in range(start, end):
         print(i)
-        test_rows = range(i*size, (i+1)*size)
-        train_rows = range(0, i*size) + range((i+1)*size, data.shape[0])
+        if args.num_groups != 1:
+            test_rows = range(i*size, (i+1)*size)
+            train_rows = range(0, i*size) + range((i+1)*size, data.shape[0])
+        else:
+            test_rows = range(data.shape[0])
+            train_rows = range(data.shape[0])
         
         X_train = data[train_rows,:]
         X_test = data[test_rows,:]
