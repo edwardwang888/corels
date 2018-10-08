@@ -194,7 +194,7 @@ int main(int argc, char *argv[]) {
     char log_fname[BUFSZ];
     char opt_fname[BUFSZ];
     const char* pch = strrchr(argv[0], '/');
-    snprintf(froot, BUFSZ, "../logs/for-%s-%s%s-%s-%s-removed=%s-max_num_nodes=%d-c=%.7f-v=%d-f=%d",
+    snprintf(froot, BUFSZ, "../logs/for-%s-%s%s-%s-%s-removed=%s-max_num_nodes=%d-c=%.7f-v=%s-f=%d-wpa=%d-falling=%d-t=%f-B=%f-R=%f",
             pch ? pch + 1 : "",
             run_bfs ? "bfs" : "",
             run_curiosity ? curiosity_map[curiosity_policy].c_str() : "",
@@ -202,7 +202,7 @@ int main(int argc, char *argv[]) {
                 (use_captured_sym_map ? "with_captured_symmetry_map" : "no_pmap"),
             meta ? "minor" : "no_minor",
             ablation ? ((ablation == 1) ? "support" : "lookahead") : "none",
-            max_num_nodes, c, "0", freq);
+            max_num_nodes, c, "0", freq, wpa, falling, ties, bound, random);
     snprintf(log_fname, BUFSZ, "%s.txt", froot);
     snprintf(opt_fname, BUFSZ, "%s-opt.txt", froot);
 
