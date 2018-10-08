@@ -193,7 +193,12 @@ int main(int argc, char *argv[]) {
     snprintf(log_fname, BUFSZ, "%s.txt", froot);
     snprintf(opt_fname, BUFSZ, "%s-opt.txt", froot);
 
-    if (verbosity >= 1000) {
+    if (access(opt_fname, F_OK) == 0) {
+        printf("writing optimal rule list to: %s\n\n", opt_fname);
+        exit(0);
+    }
+
+    if (verbosity.count("rule")) {
         printf("\n%d rules %d samples\n\n", nrules, nsamples);
         rule_print_all(rules, nrules, nsamples);
 
