@@ -75,8 +75,13 @@ class CuriousNode: public Node {
     public:
         CuriousNode(unsigned short id, size_t nrules, bool prediction, bool default_prediction,
              double lower_bound, double objective, double curiosity, CuriousNode* parent,
+<<<<<<< HEAD
+             size_t num_captured, double equivalent_minority) : Node(id, nrules, prediction, default_prediction,
+                 lower_bound, objective, (Node*) parent, num_captured, equivalent_minority) {
+=======
              size_t num_captured, double equivalent_minority, double proportion) : Node(id, nrules, prediction, default_prediction,
                  lower_bound, objective, (Node*)parent, num_captured, equivalent_minority, proportion) {
+>>>>>>> edits
             curiosity_ = curiosity;
         }
 

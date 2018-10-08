@@ -399,6 +399,7 @@ ruleset_init(int nrules,
 
 		rule_vandnot(not_captured, not_captured,
 		    rs->rules[i].captures, nsamples, &cnt);
+        printf("cnt: %d\n", cnt);
 	}
 	assert(cnt==0);
 

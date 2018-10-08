@@ -16,10 +16,6 @@ class Node {
     Node(unsigned short id, size_t nrules, bool prediction, bool default_prediction,
          double lower_bound, double objective, Node* parent,
          size_t num_captured, double equivalent_minority);
-    
-    Node(unsigned short id, size_t nrules, bool prediction, bool default_prediction,
-         double lower_bound, double objective, Node* parent,
-         size_t num_captured, double equivalent_minority, double proportion);
 
     virtual ~Node() {}
 
@@ -32,7 +28,6 @@ class Node {
     inline void set_done();
     inline bool deleted() const;
     inline void set_deleted();
-    inline double proportion() const;
 
     // Returns pair of prefixes and predictions for the path from this node to the root
     inline std::pair<tracking_vector<unsigned short, DataStruct::Tree>, tracking_vector<bool, DataStruct::Tree> >
@@ -66,7 +61,6 @@ class Node {
     bool default_prediction_;
     bool done_;
     bool deleted_;
-    double proportion_;
 
     friend class CacheTree;
 };
@@ -75,8 +69,8 @@ class CuriousNode: public Node {
     public:
         CuriousNode(unsigned short id, size_t nrules, bool prediction, bool default_prediction,
              double lower_bound, double objective, double curiosity, CuriousNode* parent,
-             size_t num_captured, double equivalent_minority, double proportion) : Node(id, nrules, prediction, default_prediction,
-                 lower_bound, objective, (Node*)parent, num_captured, equivalent_minority, proportion) {
+             size_t num_captured, double equivalent_minority) : Node(id, nrules, prediction, default_prediction,
+                 lower_bound, objective, (Node*)parent, num_captured, equivalent_minority) {
             curiosity_ = curiosity;
         }
 
@@ -97,7 +91,7 @@ class CacheTree {
            bool prediction, bool default_prediction,
            double lower_bound, double objective,
            Node* parent, int num_not_captured,
-           int nsamples, int len_prefix, double c, double equivalent_minority, double proportion);
+           int nsamples, int len_prefix, double c, double equivalent_minority);
 
     inline double min_objective() const;
     inline tracking_vector<unsigned short, DataStruct::Tree> opt_rulelist() const;
@@ -366,10 +360,6 @@ inline void CacheTree::increment_num_evaluated() {
 inline void CacheTree::decrement_num_nodes() {
     --num_nodes_;
     logger->setTreeNumNodes(num_nodes_);
-}
-
-inline double Node::proportion() const {
-    return proportion_;
 }
 
 void delete_subtree(CacheTree* tree, Node* node, bool destructive, bool update_remaining_state_space);

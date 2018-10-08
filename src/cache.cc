@@ -13,11 +13,11 @@ Node::Node(size_t nrules, bool default_prediction, double objective, double equi
 
 Node::Node(unsigned short id, size_t nrules, bool prediction,
               bool default_prediction, double lower_bound, double objective,
-              Node* parent, size_t num_captured, double equivalent_minority)
+              Node* parent, size_t num_captured, double equivalent_minority, double proportion)
     : parent_(parent), lower_bound_(lower_bound), objective_(objective),
       equivalent_minority_(equivalent_minority), depth_(1 + parent->depth_),
       num_captured_(num_captured), id_(id), prediction_(prediction),
-      default_prediction_(default_prediction), done_(0), deleted_(0) {
+      default_prediction_(default_prediction), done_(0), deleted_(0), proportion_(proportion) {
           (void) nrules;
 }
 
@@ -50,16 +50,16 @@ CacheTree::~CacheTree() {
 Node* CacheTree::construct_node(unsigned short new_rule, size_t nrules, bool prediction,
                          bool default_prediction, double lower_bound, double objective, 
                          Node* parent, int num_not_captured, int nsamples,
-                         int len_prefix, double c, double equivalent_minority) {
+                         int len_prefix, double c, double equivalent_minority, double proportion) {
     size_t num_captured = nsamples - num_not_captured;
     Node* n;
     if (strcmp(type_, "curious") == 0) {
         double curiosity = (lower_bound - equivalent_minority) * nsamples / (double)(num_captured);
         n = (Node*) (new CuriousNode(new_rule, nrules, prediction, default_prediction,
-                                lower_bound, objective, curiosity, (CuriousNode*) parent, num_captured, equivalent_minority));
+                                lower_bound, objective, curiosity, (CuriousNode*) parent, num_captured, equivalent_minority, proportion));
     } else {
         n = (new Node(new_rule, nrules, prediction, default_prediction,
-                                lower_bound, objective, parent, num_captured, equivalent_minority));
+                                lower_bound, objective, parent, num_captured, equivalent_minority, proportion));
     }
     logger->addToMemory(sizeof(*n), DataStruct::Tree);
     return n;
@@ -102,6 +102,7 @@ void CacheTree::insert_root() {
 void CacheTree::insert(Node* node) {
     node->parent()->children_.insert(std::make_pair(node->id(), node));
     ++num_nodes_;
+    // printf("Incrementing nodes: %d\n", (int)num_nodes_);
     logger->setTreeNumNodes(num_nodes_);
 }
 

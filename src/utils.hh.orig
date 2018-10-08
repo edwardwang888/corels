@@ -9,6 +9,7 @@
 #include <fstream>
 #include <vector>
 #include <gmpxx.h>
+#include <set>
 
 using namespace std;
 
@@ -18,7 +19,7 @@ class NullLogger {
   public:
     virtual void closeFile() {}
     NullLogger() {}
-    NullLogger(double c, size_t nrules, int verbosity, char* log_fname, int freq) {}
+    NullLogger(double c, size_t nrules, std::set<std::string> verbosity, char* log_fname, int freq) {}
     ~NullLogger() {}
 
     virtual void setLogFileName(char *fname) {}
@@ -26,8 +27,8 @@ class NullLogger {
     virtual std::string dumpPrefixLens() { return ""; }
     virtual std::string dumpRemainingSpaceSize() { return ""; }
 
-    virtual inline void setVerbosity(int verbosity) {}
-    virtual inline int getVerbosity() { return 0; }
+    virtual inline void setVerbosity(std::set<std::string> verbosity) { _v = verbosity; }
+    virtual inline std::set<std::string> getVerbosity() { return _v; }
     virtual inline void setFrequency(int frequency) {}
     virtual inline int getFrequency() { return 1000; }
     virtual inline void addToLowerBoundTime(double t) {}
@@ -156,7 +157,7 @@ class NullLogger {
     double _c;
     size_t _nrules;
     State _state;
-    int _v;                                     // verbosity
+    std::set<std::string> _v;                   // verbosity
     int _freq;                                  // frequency of logging
     ofstream _f;                                // output file
 };
@@ -164,10 +165,10 @@ class NullLogger {
 class Logger : public NullLogger {
   public:
     void closeFile() override { if (_f.is_open()) _f.close(); }
-    Logger(double c, size_t nrules, int verbosity, char* log_fname, int freq);
-    ~Logger() { 
+    Logger(double c, size_t nrules, std::set<std::string> verbosity, char* log_fname, int freq);
+    ~Logger() {
         free(_state.prefix_lens);
-        closeFile(); 
+        closeFile();
     }
 
     void setLogFileName(char *fname) override;
@@ -175,10 +176,10 @@ class Logger : public NullLogger {
     std::string dumpPrefixLens() override;
     std::string dumpRemainingSpaceSize() override;
 
-    inline void setVerbosity(int verbosity) override {
+    inline void setVerbosity(std::set<std::string> verbosity) override {
         _v = verbosity;
     }
-    inline int getVerbosity() override {
+    inline std::set<std::string> getVerbosity() override {
         return _v;
     }
     inline void setFrequency(int frequency) override {
@@ -290,7 +291,7 @@ class Logger : public NullLogger {
     }
     inline void updateQueueMinLen() override {
         // Note: min length is logically undefined when queue size is 0
-        size_t min_length = 0; 
+        size_t min_length = 0;
         for(size_t i = 0; i < _nrules; ++i) {
             if (_state.prefix_lens[i] > 0) {
                 min_length = i;
@@ -340,7 +341,7 @@ class Logger : public NullLogger {
         if (f_naive < f)
             f = f_naive;
         mpz_set_ui(tot, _nrules - len_prefix);
-        for (unsigned int k = (_nrules - len_prefix - 1); 
+        for (unsigned int k = (_nrules - len_prefix - 1);
                 k >= (_nrules - len_prefix - f + 1); k--) {
             mpz_addmul_ui(tot, tot, k);
         }
@@ -392,7 +393,7 @@ class Logger : public NullLogger {
     }
     inline size_t getLogRemainingSpaceSize() override {
         // This is approximate.
-        return mpz_sizeinbase(_state.remaining_space_size, 10); 
+        return mpz_sizeinbase(_state.remaining_space_size, 10);
     }
 };
 
@@ -409,7 +410,7 @@ inline double time_diff(double t0) {
 }
 
 #include "alloc.hh"
-/* 
+/*
  * Prints the final rulelist that CORELS returns.
  * rulelist -- rule ids of optimal rulelist
  * preds -- corresponding predictions of rules (+ default prediction)
@@ -419,7 +420,11 @@ void print_final_rulelist(const tracking_vector<unsigned short, DataStruct::Tree
                           const bool latex_out,
                           const rule_t rules[],
                           const rule_t labels[],
+<<<<<<< HEAD
                           char fname[],
-   			              int print_progress, int nsamples, int nrules);
+   			  int print_progress);
+=======
+                          char fname[], int nsamples, int nrules);
+>>>>>>> edits
 
 void print_machine_info();
