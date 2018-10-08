@@ -14,9 +14,17 @@ bool has_falling_constraint(double proportion, double parent_proportion, double 
 
 bool perform_search(bool change_search_path)
 {
+    return true;
     if (change_search_path == false)
         return true;
-    return true || random() < RAND_MAX/2;
+    return random() < RAND_MAX/4;
+}
+
+int compare_doubles(const void *a, const void *b)
+{
+    const double *da =  (const double *)a;
+    const double *db = (const double *)b;
+    return (int)(*da - *db);
 }
 
 /*
@@ -50,123 +58,245 @@ void evaluate_children(CacheTree* tree, Node* parent, tracking_vector<unsigned s
     parent_equivalent_minority = parent->equivalent_minority();
     double t0 = timestamp();
 
-    int total_zeros = tree->label(0).support;
-    int total_ones = nsamples - total_zeros;
+    //int total_zeros = tree->label(0).support;
+    //int total_ones = nsamples - total_zeros;
 
 
     // nrules is actually the number of rules + 1 (since it includes the default rule), so the maximum
     // value of i is nrules - 1 instead of nrules
     std::set<std::string> verbosity = logger->getVerbosity();
-    for (i = 1; i < nrules; i++) {
-        double t1 = timestamp();
-        // check if this rule is already in the prefix
-        if (std::find(parent_prefix.begin(), parent_prefix.end(), i) != parent_prefix.end())
-            continue;
-        // captured represents data captured by the new rule
-        rule_vand(captured, parent_not_captured, tree->rule(i).truthtable, nsamples, &num_captured);
-        // lower bound on antecedent support
-        if ((tree->ablation() != 1) && (num_captured < threshold)) 
-            continue;
-        rule_vand(captured_zeros, captured, tree->label(0).truthtable, nsamples, &c0);
-        c1 = num_captured - c0;
-        if (c0 > c1) {
-            prediction = 0;
-            captured_correct = c0;
-        } else {
-            prediction = 1;
-            captured_correct = c1;
-        }
-        // lower bound on accurate antecedent support
-        if ((tree->ablation() != 1) && (captured_correct < threshold))
-            continue;
-        // subtract off parent equivalent points bound because we want to use pure lower bound from parent
-        lower_bound = parent_lower_bound - parent_equivalent_minority + (double)(num_captured - captured_correct) / nsamples + c;
-        logger->addToLowerBoundTime(time_diff(t1));
-        logger->incLowerBoundNum();
-        if (lower_bound >= tree->min_objective()) // hierarchical objective lower bound
-            continue;
-        double t2 = timestamp();
-        rule_vandnot(not_captured, parent_not_captured, captured, nsamples, &num_not_captured);
-        rule_vand(not_captured_zeros, not_captured, tree->label(0).truthtable, nsamples, &d0);
-        d1 = num_not_captured - d0;
-        if (d0 > d1) {
-            default_prediction = 0;
-            default_correct = d0;
-        } else {
-            default_prediction = 1;
-            default_correct = d1;
-        }
-        objective = lower_bound + (double)(num_not_captured - default_correct) / nsamples;
-
-        //printf("parent->objective(): %f\n", parent->objective());
-        if (tree->wpa())
-            objective = parent->objective() - c1 * d0 + c; 
-        logger->addToObjTime(time_diff(t2));
-        logger->incObjNum();
-        // Should falling constraint go here too?
-        double proportion = (double)c1/num_captured;
-        double default_proportion = (double)d1/num_not_captured;
-        if (objective < tree->min_objective() && perform_search(change_search_path) && \
-           (falling == false || has_falling_constraint(proportion, parent->proportion(), default_proportion))) {
-            if (verbosity.count("progress")) {
-				printf("min(objective): %1.5f -> %1.5f, length: %d, cache size: %zu\n",
-                   tree->min_objective(), objective, len_prefix, tree->num_nodes());
+    // Have two versions depending on whether wpa is true or not (a lot of copying and pasting)
+    if (tree->wpa() == false) {
+        for (i = 1; i < nrules; i++) {
+            double t1 = timestamp();
+            // check if this rule is already in the prefix
+            if (std::find(parent_prefix.begin(), parent_prefix.end(), i) != parent_prefix.end())
+                continue;
+            // captured represents data captured by the new rule
+            rule_vand(captured, parent_not_captured, tree->rule(i).truthtable, nsamples, &num_captured);
+            // lower bound on antecedent support
+            if ((tree->ablation() != 1) && (num_captured < threshold))
+                continue;
+            rule_vand(captured_zeros, captured, tree->label(0).truthtable, nsamples, &c0);
+            c1 = num_captured - c0;
+            if (c0 > c1) {
+                prediction = 0;
+                captured_correct = c0;
+            } else {
+                prediction = 1;
+                captured_correct = c1;
             }
-            logger->setTreeMinObj(objective);
-            tree->update_min_objective(objective);
-            tree->update_opt_rulelist(parent_prefix, i);
-            tree->update_opt_predictions(parent, prediction, default_prediction);
-            // dump state when min objective is updated
-            logger->dumpState();
-        }
-        // calculate equivalent points bound to capture the fact that the minority points can never be captured correctly
-        if (tree->has_minority()) {
-            rule_vand(not_captured_equivalent, not_captured, tree->minority(0).truthtable, nsamples, &num_not_captured_equivalent);
-            equivalent_minority = (double)(num_not_captured_equivalent) / nsamples;
-            lower_bound += equivalent_minority;
-        }
-        if (tree->ablation() != 2)
-            lookahead_bound = lower_bound + c;
-        else
-            lookahead_bound = lower_bound;
+            // lower bound on accurate antecedent support
+            if ((tree->ablation() != 1) && (captured_correct < threshold))
+                continue;
+            // subtract off parent equivalent points bound because we want to use pure lower bound from parent
+            lower_bound = parent_lower_bound - parent_equivalent_minority + (double)(num_captured - captured_correct) / nsamples + c;
+            logger->addToLowerBoundTime(time_diff(t1));
+            logger->incLowerBoundNum();
+            if (lower_bound >= tree->min_objective()) // hierarchical objective lower bound
+                continue;
+            double t2 = timestamp();
+            rule_vandnot(not_captured, parent_not_captured, captured, nsamples, &num_not_captured);
+            rule_vand(not_captured_zeros, not_captured, tree->label(0).truthtable, nsamples, &d0);
+            d1 = num_not_captured - d0;
+            if (d0 > d1) {
+                default_prediction = 0;
+                default_correct = d0;
+            } else {
+                default_prediction = 1;
+                default_correct = d1;
+            }
+            objective = lower_bound + (double)(num_not_captured - default_correct) / nsamples;
 
-        // Calculate lower bound using WPA
-        if (tree->wpa()) {
-            VECTOR parent_not_captured_zeroes;
-            rule_vinit(nsamples, &parent_not_captured_zeroes);
-            int num_parent_not_captured = count_ones_vector(parent_not_captured, nsamples);
-            int r0;
-            rule_vand(parent_not_captured_zeroes, parent_not_captured, tree->label(0).truthtable, nsamples, &r0);
-            int r1 = num_parent_not_captured - r0;
-            lookahead_bound = parent->objective() - r1 * r0 + c;
-        }
-        // only add node to our datastructures if its children will be viable
-        // also add falling constraint
-        if (lookahead_bound < tree->min_objective() && perform_search(change_search_path) && \
+            //printf("parent->objective(): %f\n", parent->objective());
+            if (tree->wpa())
+                objective = parent->objective() - c1 * d0 + c; 
+            logger->addToObjTime(time_diff(t2));
+            logger->incObjNum();
+            // Should falling constraint go here too?
+            double proportion = (double)c1/num_captured;
+            double default_proportion = (double)d1/num_not_captured;
+            if (objective < tree->min_objective() && perform_search(change_search_path) && \
             (falling == false || has_falling_constraint(proportion, parent->proportion(), default_proportion))) {
-            double t3 = timestamp();
-            // check permutation bound
-            if (show_proportion)
-                printf("Proportion: %f\n", proportion);
-            Node* n = p->insert(i, nrules, prediction, default_prediction,
-                                lower_bound, objective, parent, num_not_captured, nsamples,
-                                len_prefix, c, equivalent_minority, tree, not_captured, parent_prefix, proportion);
-            logger->addToPermMapInsertionTime(time_diff(t3));
-            // n is NULL if this rule fails the permutaiton bound
-            if (n) {
-                double t4 = timestamp();
-                tree->insert(n);
-                logger->incTreeInsertionNum();
-                logger->incPrefixLen(len_prefix);
-                logger->addToTreeInsertionTime(time_diff(t4));
-                double t5 = timestamp();
-                q->push(n);
-                logger->setQueueSize(q->size());
-                if (tree->calculate_size())
-                    logger->addQueueElement(len_prefix, lower_bound, false);
-                logger->addToQueueInsertionTime(time_diff(t5));
+                if (verbosity.count("progress")) {
+                    printf("min(objective): %1.5f -> %1.5f, length: %d, cache size: %zu\n",
+                    tree->min_objective(), objective, len_prefix, tree->num_nodes());
+                }
+                logger->setTreeMinObj(objective);
+                tree->update_min_objective(objective);
+                tree->update_opt_rulelist(parent_prefix, i);
+                tree->update_opt_predictions(parent, prediction, default_prediction);
+                // dump state when min objective is updated
+                logger->dumpState();
             }
-        } // else:  objective lower bound with one-step lookahead
+            // calculate equivalent points bound to capture the fact that the minority points can never be captured correctly
+            if (tree->has_minority()) {
+                rule_vand(not_captured_equivalent, not_captured, tree->minority(0).truthtable, nsamples, &num_not_captured_equivalent);
+                equivalent_minority = (double)(num_not_captured_equivalent) / nsamples;
+                lower_bound += equivalent_minority;
+            }
+            if (tree->ablation() != 2)
+                lookahead_bound = lower_bound + c;
+            else
+                lookahead_bound = lower_bound;
+
+            // Calculate lower bound using WPA
+            if (tree->wpa()) {
+                VECTOR parent_not_captured_zeroes;
+                rule_vinit(nsamples, &parent_not_captured_zeroes);
+                int num_parent_not_captured = count_ones_vector(parent_not_captured, nsamples);
+                int r0;
+                rule_vand(parent_not_captured_zeroes, parent_not_captured, tree->label(0).truthtable, nsamples, &r0);
+                int r1 = num_parent_not_captured - r0;
+                lookahead_bound = parent->objective() - r1 * r0 + c;
+            }
+            // only add node to our datastructures if its children will be viable
+            // also add falling constraint
+            if (lookahead_bound < tree->min_objective() && perform_search(change_search_path) && \
+                (falling == false || has_falling_constraint(proportion, parent->proportion(), default_proportion))) {
+                double t3 = timestamp();
+                // check permutation bound
+                if (show_proportion)
+                    printf("Proportion: %f\n", proportion);
+                Node* n = p->insert(i, nrules, prediction, default_prediction,
+                                    lower_bound, objective, parent, num_not_captured, nsamples,
+                                    len_prefix, c, equivalent_minority, tree, not_captured, parent_prefix, proportion);
+                logger->addToPermMapInsertionTime(time_diff(t3));
+                // n is NULL if this rule fails the permutaiton bound
+                if (n) {
+                    double t4 = timestamp();
+                    tree->insert(n);
+                    logger->incTreeInsertionNum();
+                    logger->incPrefixLen(len_prefix);
+                    logger->addToTreeInsertionTime(time_diff(t4));
+                    double t5 = timestamp();
+                    q->push(n);
+                    logger->setQueueSize(q->size());
+                    if (tree->calculate_size())
+                        logger->addQueueElement(len_prefix, lower_bound, false);
+                    logger->addToQueueInsertionTime(time_diff(t5));
+                }
+            } // else:  objective lower bound with one-step lookahead
+        }
+    }
+    // Version to run when wpa is true
+    else {
+        double lb_array[nrules];
+        for (i = 1; i < nrules; i++) {
+            double t1 = timestamp();
+            // check if this rule is already in the prefix
+            if (std::find(parent_prefix.begin(), parent_prefix.end(), i) != parent_prefix.end())
+                continue;
+            // captured represents data captured by the new rule
+            rule_vand(captured, parent_not_captured, tree->rule(i).truthtable, nsamples, &num_captured);
+            // lower bound on antecedent support
+            if ((tree->ablation() != 1) && (num_captured < threshold))
+                continue;
+            rule_vand(captured_zeros, captured, tree->label(0).truthtable, nsamples, &c0);
+            c1 = num_captured - c0;
+            if (c0 > c1) {
+                prediction = 0;
+                captured_correct = c0;
+            } else {
+                prediction = 1;
+                captured_correct = c1;
+            }
+            // lower bound on accurate antecedent support
+            if ((tree->ablation() != 1) && (captured_correct < threshold))
+                continue;
+            // subtract off parent equivalent points bound because we want to use pure lower bound from parent
+            lower_bound = parent_lower_bound - parent_equivalent_minority + (double)(num_captured - captured_correct) / nsamples + c;
+            logger->addToLowerBoundTime(time_diff(t1));
+            logger->incLowerBoundNum();
+            if (lower_bound >= tree->min_objective()) // hierarchical objective lower bound
+                continue;
+            double t2 = timestamp();
+            rule_vandnot(not_captured, parent_not_captured, captured, nsamples, &num_not_captured);
+            rule_vand(not_captured_zeros, not_captured, tree->label(0).truthtable, nsamples, &d0);
+            d1 = num_not_captured - d0;
+            if (d0 > d1) {
+                default_prediction = 0;
+                default_correct = d0;
+            } else {
+                default_prediction = 1;
+                default_correct = d1;
+            }
+            objective = lower_bound + (double)(num_not_captured - default_correct) / nsamples;
+
+            //printf("parent->objective(): %f\n", parent->objective());
+            if (tree->wpa())
+                objective = parent->objective() - c1 * d0 + c; 
+            logger->addToObjTime(time_diff(t2));
+            logger->incObjNum();
+            // Should falling constraint go here too?
+            double proportion = (double)c1/num_captured;
+            double default_proportion = (double)d1/num_not_captured;
+            if (objective < tree->min_objective() && perform_search(change_search_path) && \
+            (falling == false || has_falling_constraint(proportion, parent->proportion(), default_proportion))) {
+                if (verbosity.count("progress")) {
+                    printf("min(objective): %1.5f -> %1.5f, length: %d, cache size: %zu\n",
+                    tree->min_objective(), objective, len_prefix, tree->num_nodes());
+                }
+                logger->setTreeMinObj(objective);
+                tree->update_min_objective(objective);
+                tree->update_opt_rulelist(parent_prefix, i);
+                tree->update_opt_predictions(parent, prediction, default_prediction);
+                // dump state when min objective is updated
+                logger->dumpState();
+            }
+            // calculate equivalent points bound to capture the fact that the minority points can never be captured correctly
+            if (tree->has_minority()) {
+                rule_vand(not_captured_equivalent, not_captured, tree->minority(0).truthtable, nsamples, &num_not_captured_equivalent);
+                equivalent_minority = (double)(num_not_captured_equivalent) / nsamples;
+                lower_bound += equivalent_minority;
+            }
+            if (tree->ablation() != 2)
+                lookahead_bound = lower_bound + c;
+            else
+                lookahead_bound = lower_bound;
+
+            // Calculate lower bound using WPA
+            if (tree->wpa()) {
+                VECTOR parent_not_captured_zeroes;
+                rule_vinit(nsamples, &parent_not_captured_zeroes);
+                int num_parent_not_captured = count_ones_vector(parent_not_captured, nsamples);
+                int r0;
+                rule_vand(parent_not_captured_zeroes, parent_not_captured, tree->label(0).truthtable, nsamples, &r0);
+                int r1 = num_parent_not_captured - r0;
+                lookahead_bound = parent->objective() - r1 * r0 + c;
+            }
+            lb_array[i] = lookahead_bound;
+            // only add node to our datastructures if its children will be viable
+            // also add falling constraint
+            /*
+            if (lookahead_bound < tree->min_objective() && perform_search(change_search_path) && \
+                (falling == false || has_falling_constraint(proportion, parent->proportion(), default_proportion))) {
+                double t3 = timestamp();
+                // check permutation bound
+                if (show_proportion)
+                    printf("Proportion: %f\n", proportion);
+                Node* n = p->insert(i, nrules, prediction, default_prediction,
+                                    lower_bound, objective, parent, num_not_captured, nsamples,
+                                    len_prefix, c, equivalent_minority, tree, not_captured, parent_prefix, proportion);
+                logger->addToPermMapInsertionTime(time_diff(t3));
+                // n is NULL if this rule fails the permutaiton bound
+                if (n) {
+                    double t4 = timestamp();
+                    tree->insert(n);
+                    logger->incTreeInsertionNum();
+                    logger->incPrefixLen(len_prefix);
+                    logger->addToTreeInsertionTime(time_diff(t4));
+                    double t5 = timestamp();
+                    q->push(n);
+                    logger->setQueueSize(q->size());
+                    if (tree->calculate_size())
+                        logger->addQueueElement(len_prefix, lower_bound, false);
+                    logger->addToQueueInsertionTime(time_diff(t5));
+                }
+            } // else:  objective lower bound with one-step lookahead
+            */
+        }
+        qsort(lb_array, nrules, sizeof(double), compare_doubles);
     }
     
     rule_vfree(&captured);
