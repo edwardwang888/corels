@@ -1,4 +1,4 @@
-CFLAGS := -g -W -Wall -Wno-unused-parameter -fPIC -I. -DGMP -O2 -fno-omit-frame-pointer -I/usr/local/include -stdlib=libc++
+CFLAGS := -g -W -Wall -Wno-unused-parameter -fPIC -I. -DGMP -O2 -fno-omit-frame-pointer -I/usr/local/include #-stdlib=libc++
 
 ifneq (,$(filter $(shell uname -n),elaines-MacBook-Pro.local Nicholass-Air-5.wireless.yale.internal))
     LIBS := -L/usr/local/lib
@@ -20,7 +20,7 @@ else
 endif
 
 ifneq ($(shell uname),Darwin)
-    LIBS += #-lbsd
+    #LIBS += -lbsd
 endif
 
 CC = gcc
@@ -85,10 +85,10 @@ test: test.c
 	gcc -Wall -Wextra -o test test.c
 
 corels_test: corels_test.c rulelib.c wpa_objective.h
-	gcc -L/usr/local/lib -lgmpxx -lgmp -DGMP -o corels_test corels_test.c rulelib.c
+	gcc -L/usr/local/lib -DGMP -o corels_test corels_test.c rulelib.c -lgmpxx -lgmp 
 
 baseline: baseline.c wpa_objective.h rulelib.c
-	gcc -L/usr/local/lib -lgmpxx -lgmp -DGMP -o baseline baseline.c rulelib.c
+	gcc -L/usr/local/lib -DGMP -o baseline baseline.c rulelib.c -lgmpxx -lgmp 
 
 DEPFILES := $(wildcard $(DEPSDIR)/*.d)
 ifneq ($(DEPFILES),)
