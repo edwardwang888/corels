@@ -3,6 +3,11 @@
 #include <stdio.h>
 #include <getopt.h>
 #include <string>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <errno.h>
 
 #define BUFSZ 512
 
@@ -40,8 +45,10 @@ int main(int argc, char *argv[]) {
     char verbstr[BUFSZ]; 
     bool falling = false;
     bool show_proportion = false;
+    int outfd = 0;
+    char *outfile;
     /* only parsing happens here */
-    while ((ch = getopt(argc, argv, "bsLdec:p:v:n:r:f:a:")) != -1) {
+    while ((ch = getopt(argc, argv, "bsLdec:p:v:n:r:f:a:o:")) != -1) {
         switch (ch) {
         case 'b':
             run_bfs = true;
@@ -80,8 +87,26 @@ int main(int argc, char *argv[]) {
             falling = true;
             break;
         case 'e':
-             show_proportion = true;
-             break;
+            show_proportion = true;
+            break;
+        case 'o':
+        {
+            bool newfile = false;
+            outfile = optarg;
+            if (access(optarg, F_OK) != 0)
+                newfile = true;
+            outfd = open(optarg, O_WRONLY|O_CREAT|O_APPEND, S_IRUSR|S_IWUSR);
+            if (outfd == -1) {
+                fprintf(stderr, "Error opening file: %s\n", optarg);
+                exit(1);
+            }
+            if (newfile) {
+                char text[100] = "Regularity,Length,Accuracy,Objective\n";
+                if (write(outfd, text, strlen(text)) == -1)
+                    printf("Error in writing to %s: %s\n", outfile, strerror(errno));
+            }
+            break;
+        }
         default:
             error = true;
             snprintf(error_txt, BUFSZ, "unknown option: %c", ch);
@@ -219,10 +244,28 @@ int main(int argc, char *argv[]) {
     printf("final num_evaluated: %zu\n", tree->num_evaluated());
     printf("final min_objective: %1.5f\n", tree->min_objective());
     const tracking_vector<unsigned short, DataStruct::Tree>& r_list = tree->opt_rulelist();
-    printf("final accuracy: %1.5f\n",
-       1 - tree->min_objective() + c*r_list.size());
+
+    double accuracy = 1 - tree->min_objective() + c*r_list.size();
+    if (verbosity.count("progress")) {
+        printf("final num_nodes: %zu\n", tree->num_nodes());
+        printf("final num_evaluated: %zu\n", tree->num_evaluated());
+        printf("final min_objective: %1.5f\n", tree->min_objective());
+        printf("final accuracy: %1.5f\n",
+           accuracy);
+   }
+
     print_final_rulelist(r_list, tree->opt_predictions(),
                      latex_out, rules, labels, opt_fname, verbosity.count("progress"), nsamples, nrules);
+
+    // Output to CSV file
+    if (outfd != 0) {
+        char output[100];
+        sprintf(output, "%1.20f,%lu,%1.20f,%1.20f\n", c, r_list.size(), accuracy, tree->min_objective());
+        if(write(outfd, output, strlen(output)) == -1)
+            printf("Error in writing to %s: %s\n", outfile, strerror(errno));
+        else
+            printf("Writing output to: %s\n", outfile);
+    }
 
     if (verbosity.count("progress"))
         printf("final total time: %f\n", time_diff(init));

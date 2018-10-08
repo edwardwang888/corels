@@ -30,7 +30,7 @@ CXX = g++ -std=c++11
 
 DEPSDIR := .deps
 
-CLEAN = corels *~ *.o *.so
+CLEAN = corels corels-cli evaluate-test test *~ *.o *.so *.a *.csv
 
 all: corels
 
@@ -71,6 +71,9 @@ $(DEPSDIR)/stamp:
 clean:
 	$(RM) $(wildcard $(CLEAN))
 	$(RM) -r $(DEPSDIR)
+
+test: test.c
+	gcc -Wall -Wextra -o test test.c
 
 DEPFILES := $(wildcard $(DEPSDIR)/*.d)
 ifneq ($(DEPFILES),)
