@@ -103,13 +103,46 @@ std::string Logger::dumpPrefixLens() {
 /*
  * Given a rulelist and predictions, will output a human-interpretable form to a file.
  */
+
 void print_final_rulelist(const tracking_vector<unsigned short, DataStruct::Tree>& rulelist,
                           const tracking_vector<bool, DataStruct::Tree>& preds,
                           const bool latex_out,
                           const rule_t rules[],
                           const rule_t labels[],
                           char fname[],
-                          int print_progress, int nsamples, int nrules) {
+                          int print_progress, bool print_debug,
+                          int nsamples, int nrules);
+
+void print_final_rulelist(const tracking_vector<unsigned short, DataStruct::Tree>& rulelist,
+                          const tracking_vector<bool, DataStruct::Tree>& preds,
+                          const bool latex_out,
+                          const rule_t rules[],
+                          const rule_t labels[],
+                          char fname[],
+                          int print_progress)
+{
+    print_final_rulelist(rulelist, preds, latex_out, rules, labels, fname, print_progress, false, 0, 0);
+}
+
+void print_final_rulelist(const tracking_vector<unsigned short, DataStruct::Tree>& rulelist,
+                          const tracking_vector<bool, DataStruct::Tree>& preds,
+                          const bool latex_out,
+                          const rule_t rules[],
+                          const rule_t labels[],
+                          char fname[],
+                          int print_progress, int nsamples, int nrules)
+{
+    print_final_rulelist(rulelist, preds, latex_out, rules, labels, fname, true, nsamples, nrules);
+}
+
+void print_final_rulelist(const tracking_vector<unsigned short, DataStruct::Tree>& rulelist,
+                          const tracking_vector<bool, DataStruct::Tree>& preds,
+                          const bool latex_out,
+                          const rule_t rules[],
+                          const rule_t labels[],
+                          char fname[],
+                          int print_progress, bool print_debug,
+                          int nsamples, int nrules) {
     assert(rulelist.size() == preds.size() - 1);
 
     // Generate ruleset
@@ -143,6 +176,7 @@ void print_final_rulelist(const tracking_vector<unsigned short, DataStruct::Tree
         printf("if (%s) then (%s)\n", rules[rulelist[0]].features,
                labels[preds[0]].features);
         printf("    %d %d\n", rules[rulelist[0]].support, rules[rulelist[0]].cardinality);
+        sum += rules[rulelist[0]].support;
         for (size_t i = 1; i < rulelist.size(); ++i) {
             printf("else if (%s) then (%s)\n", rules[rulelist[i]].features,
                    labels[preds[i]].features);

@@ -123,7 +123,7 @@ double run_corels (run_params_t params) {
    }
 
     print_final_rulelist(r_list, tree->opt_predictions(),
-                     params.latex_out, params.rules, params.labels, params.opt_fname, verbosity.count("progress"), params.nsamples, params.nrules);
+                     params.latex_out, params.rules, params.labels, params.opt_fname, verbosity.count("progress"));
 
     if (verbosity.count("progress"))
         printf("final total time: %f\n", time_diff(init));
