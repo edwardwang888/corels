@@ -45,10 +45,12 @@ int main(int argc, char *argv[]) {
     char verbstr[BUFSZ]; 
     bool falling = false;
     bool show_proportion = false;
+    bool wpa = false;
+    bool override_obj = false;
     int outfd = 0;
     char *outfile;
     /* only parsing happens here */
-    while ((ch = getopt(argc, argv, "bsLdec:p:v:n:r:f:a:o:")) != -1) {
+    while ((ch = getopt(argc, argv, "bsLdewWc:p:v:n:r:f:a:o:")) != -1) {
         switch (ch) {
         case 'b':
             run_bfs = true;
@@ -101,12 +103,18 @@ int main(int argc, char *argv[]) {
                 exit(1);
             }
             if (newfile) {
-                char text[100] = "Regularity,Length,Accuracy,Objective\n";
+                char text[100] = "Regularity,Length,Accuracy,Objective,Error\n";
                 if (write(outfd, text, strlen(text)) == -1)
                     printf("Error in writing to %s: %s\n", outfile, strerror(errno));
             }
             break;
         }
+        case 'w':
+            wpa = true;
+            break;
+        case 'W':
+            override_obj = true;
+            break;
         default:
             error = true;
             snprintf(error_txt, BUFSZ, "unknown option: %c", ch);
@@ -235,32 +243,41 @@ int main(int argc, char *argv[]) {
         p = (PermutationMap*) null_pmap;
     }
 
-    CacheTree* tree = new CacheTree(nsamples, nrules, c, rules, labels, meta, ablation, calculate_size, type);
-    printf("%s", run_type);
+    CacheTree* tree = new CacheTree(nsamples, nrules, c, rules, labels, meta, ablation, calculate_size, type, wpa);
+    if (verbosity.count("progress"))
+        printf("%s", run_type);
     // runs our algorithm
-    bbound(tree, max_num_nodes, q, p, falling, show_proportion);
+    bool change_search_path = outfile != NULL && strcmp(outfile, "default.csv") != 0;
+    bbound(tree, max_num_nodes, q, p, falling, show_proportion, change_search_path);
 
     printf("final num_nodes: %zu\n", tree->num_nodes());
     printf("final num_evaluated: %zu\n", tree->num_evaluated());
     printf("final min_objective: %1.5f\n", tree->min_objective());
     const tracking_vector<unsigned short, DataStruct::Tree>& r_list = tree->opt_rulelist();
 
-    double accuracy = 1 - tree->min_objective() + c*r_list.size();
+    double accuracy, wpa_objective;
+    print_final_rulelist(r_list, tree->opt_predictions(),
+                     latex_out, rules, labels, opt_fname, verbosity.count("progress"), nsamples, nrules, &accuracy, c, &wpa_objective);
+
+    // Override objective with WPA
+    double obj_error = wpa_objective - tree->min_objective();
+    if (wpa || override_obj)
+        tree->update_min_objective(wpa_objective);
+
+    //double accuracy = 1 - tree->min_objective() + c*r_list.size();
+
     if (verbosity.count("progress")) {
         printf("final num_nodes: %zu\n", tree->num_nodes());
         printf("final num_evaluated: %zu\n", tree->num_evaluated());
         printf("final min_objective: %1.5f\n", tree->min_objective());
         printf("final accuracy: %1.5f\n",
            accuracy);
-   }
-
-    print_final_rulelist(r_list, tree->opt_predictions(),
-                     latex_out, rules, labels, opt_fname, verbosity.count("progress"), nsamples, nrules);
+    }
 
     // Output to CSV file
     if (outfd != 0) {
         char output[100];
-        sprintf(output, "%1.20f,%lu,%1.20f,%1.20f\n", c, r_list.size(), accuracy, tree->min_objective());
+        sprintf(output, "%1.20f,%lu,%1.20f,%1.20f,%1.20f\n", c, r_list.size(), accuracy, tree->min_objective(), obj_error);
         if(write(outfd, output, strlen(output)) == -1)
             printf("Error in writing to %s: %s\n", outfile, strerror(errno));
         else

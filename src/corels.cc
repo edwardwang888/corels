@@ -3,12 +3,20 @@
 #include <iostream>
 #include <sys/resource.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 Queue::Queue(std::function<bool(Node*, Node*)> cmp, char const *type)
     : q_(new q (cmp)), type_(type) {}
 
 bool has_falling_constraint(double proportion, double parent_proportion, double default_proportion) {
     return (parent_proportion == 0 || parent_proportion > proportion) && proportion > default_proportion;
+}
+
+bool perform_search(bool change_search_path)
+{
+    if (change_search_path == false)
+        return true;
+    return true || random() < RAND_MAX/2;
 }
 
 /*
@@ -19,7 +27,7 @@ bool has_falling_constraint(double proportion, double parent_proportion, double 
  * parent -- the node that is going to have all of its children evaluated.
  * parent_not_captured -- the vector representing data points NOT captured by the parent.
  */
-void evaluate_children(CacheTree* tree, Node* parent, tracking_vector<unsigned short, DataStruct::Tree> parent_prefix, VECTOR parent_not_captured, Queue* q, PermutationMap* p, bool falling, bool show_proportion) {
+void evaluate_children(CacheTree* tree, Node* parent, tracking_vector<unsigned short, DataStruct::Tree> parent_prefix, VECTOR parent_not_captured, Queue* q, PermutationMap* p, bool falling, bool show_proportion, bool change_search_path) {
     VECTOR captured, captured_zeros, not_captured, not_captured_zeros, not_captured_equivalent;
     int num_captured, c0, c1, captured_correct;
     int num_not_captured, d0, d1, default_correct, num_not_captured_equivalent;
@@ -41,6 +49,14 @@ void evaluate_children(CacheTree* tree, Node* parent, tracking_vector<unsigned s
     parent_lower_bound = parent->lower_bound();
     parent_equivalent_minority = parent->equivalent_minority();
     double t0 = timestamp();
+
+    int total_zeros = tree->label(0).support;
+    int total_ones = nsamples - total_zeros;
+
+
+    // nrules is actually the number of rules + 1 (since it includes the default rule), so the maximum
+    // value of i is nrules - 1 instead of nrules
+    std::set<std::string> verbosity = logger->getVerbosity();
     for (i = 1; i < nrules; i++) {
         double t1 = timestamp();
         // check if this rule is already in the prefix
@@ -81,12 +97,16 @@ void evaluate_children(CacheTree* tree, Node* parent, tracking_vector<unsigned s
             default_correct = d1;
         }
         objective = lower_bound + (double)(num_not_captured - default_correct) / nsamples;
+
+        //printf("parent->objective(): %f\n", parent->objective());
+        if (tree->wpa())
+            objective = parent->objective() - c1 * d0 + c; 
         logger->addToObjTime(time_diff(t2));
         logger->incObjNum();
         // Should falling constraint go here too?
         double proportion = (double)c1/num_captured;
         double default_proportion = (double)d1/num_not_captured;
-        if (objective < tree->min_objective() && \
+        if (objective < tree->min_objective() && perform_search(change_search_path) && \
            (falling == false || has_falling_constraint(proportion, parent->proportion(), default_proportion))) {
             if (verbosity.count("progress")) {
 				printf("min(objective): %1.5f -> %1.5f, length: %d, cache size: %zu\n",
@@ -109,9 +129,20 @@ void evaluate_children(CacheTree* tree, Node* parent, tracking_vector<unsigned s
             lookahead_bound = lower_bound + c;
         else
             lookahead_bound = lower_bound;
+
+        // Calculate lower bound using WPA
+        if (tree->wpa()) {
+            VECTOR parent_not_captured_zeroes;
+            rule_vinit(nsamples, &parent_not_captured_zeroes);
+            int num_parent_not_captured = count_ones_vector(parent_not_captured, nsamples);
+            int r0;
+            rule_vand(parent_not_captured_zeroes, parent_not_captured, tree->label(0).truthtable, nsamples, &r0);
+            int r1 = num_parent_not_captured - r0;
+            lookahead_bound = parent->objective() - r1 * r0 + c;
+        }
         // only add node to our datastructures if its children will be viable
         // also add falling constraint
-        if (lookahead_bound < tree->min_objective() && \
+        if (lookahead_bound < tree->min_objective() && perform_search(change_search_path) && \
             (falling == false || has_falling_constraint(proportion, parent->proportion(), default_proportion))) {
             double t3 = timestamp();
             // check permutation bound
@@ -163,10 +194,10 @@ void evaluate_children(CacheTree* tree, Node* parent, tracking_vector<unsigned s
  */
 int bbound(CacheTree* tree, size_t max_num_nodes, Queue* q, PermutationMap* p)
 {
-    return bbound(tree, max_num_nodes, q, p, false, false);
+    return bbound(tree, max_num_nodes, q, p, false, false, false);
 }
 
-int bbound(CacheTree* tree, size_t max_num_nodes, Queue* q, PermutationMap* p, bool falling, bool show_proportion) {
+int bbound(CacheTree* tree, size_t max_num_nodes, Queue* q, PermutationMap* p, bool falling, bool show_proportion, bool change_search_path) {
     size_t num_iter = 0;
     int cnt;
     double min_objective;
@@ -191,18 +222,22 @@ int bbound(CacheTree* tree, size_t max_num_nodes, Queue* q, PermutationMap* p, b
     logger->incPrefixLen(0);
     // log record for empty rule list
     logger->dumpState();
+ //   if (tree->wpa())
+ //       min_objective = tree->min_objective();
     while ((tree->num_nodes() < max_num_nodes) && !q->empty()) {
         double t0 = timestamp();
         std::pair<Node*, tracking_vector<unsigned short, DataStruct::Tree> > node_ordered = q->select(tree, captured);
         logger->addToNodeSelectTime(time_diff(t0));
         logger->incNodeSelectNum();
+        //printf("node_ordered.first: %f\n", node_ordered.first);
         if (node_ordered.first) {
+            //printf("Calling evaluate_children()\n");
             double t1 = timestamp();
             // not_captured = default rule truthtable & ~ captured
             rule_vandnot(not_captured,
                          tree->rule(0).truthtable, captured,
                          tree->nsamples(), &cnt);
-            evaluate_children(tree, node_ordered.first, node_ordered.second, not_captured, q, p, falling, show_proportion);
+            evaluate_children(tree, node_ordered.first, node_ordered.second, not_captured, q, p, falling, show_proportion, change_search_path);
             logger->addToEvalChildrenTime(time_diff(t1));
             logger->incEvalChildrenNum();
             
@@ -261,9 +296,15 @@ int bbound(CacheTree* tree, size_t max_num_nodes, Queue* q, PermutationMap* p, b
     }
     
     // Clean up data structures
-    printf("Deleting queue elements and corresponding nodes in the cache,"
-            "since they may not be reachable by the tree's destructor\n");
-    printf("\nminimum objective: %1.10f\n", tree->min_objective());
+    if (verbosity.count("progress")) {
+        printf("Deleting queue elements and corresponding nodes in the cache,"
+                "since they may not be reachable by the tree's destructor\n");
+        printf("\nminimum objective: %1.10f\n", tree->min_objective());
+    }
+
+    // DEBIGGING ONLY (disable logging)
+    return num_iter;
+
     Node* node;
     double min_lower_bound = 1.0;
     double lb;

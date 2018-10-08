@@ -23,10 +23,10 @@ Node::Node(unsigned short id, size_t nrules, bool prediction,
 
 CacheTree::CacheTree(size_t nsamples, size_t nrules, double c, rule_t *rules,
                         rule_t *labels, rule_t *minority, int ablation,
-                        bool calculate_size, char const *type)
+                        bool calculate_size, char const *type, bool wpa)
     : root_(0), nsamples_(nsamples), nrules_(nrules), c_(c),
       num_nodes_(0), num_evaluated_(0), ablation_(ablation), calculate_size_(calculate_size), min_objective_(0.5),
-      opt_rulelist_({}), opt_predictions_({}), type_(type) {
+      opt_rulelist_({}), opt_predictions_({}), type_(type), wpa_(wpa) {
     opt_rulelist_.resize(0);
     opt_predictions_.resize(0);
     rules_ = rules;
@@ -86,7 +86,11 @@ void CacheTree::insert_root() {
     double equivalent_minority = 0.;
     if (minority_ != NULL)
         equivalent_minority = (double) count_ones_vector(minority_[0].truthtable, nsamples_) / nsamples_;
-
+    if (wpa_) {
+        int total_zeros = label(0).support;
+        int total_ones = nsamples_ - total_zeros;
+        objective = total_zeros * total_ones;
+    }
     root_ = new Node(nrules_, default_prediction, objective, equivalent_minority);
     min_objective_ = objective;
     logger->setTreeMinObj(objective);
